@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="冒険">
+<meta name="theme-color" content="#090c20">
+<link rel="apple-touch-icon" href="img/app-icon.png">
+<link rel="icon" href="img/app-icon.png">
+<title>オーナーへの冒険</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:15px}
+[hidden]{display:none!important}
+img{max-width:100%}
+.btnlike{border:2px solid var(--line);border-radius:6px;padding:8px 12px;color:var(--fg);font-family:var(--display)}
+/* Layout: a JRPG command screen. Double-ruled message windows in one column, a five-command menu fixed to the bottom. Single dark look by choice. */
+:root{
+  --bg:#090c20;
+  --win:#0f1540;
+  --win-2:#18215c;
+  --pit:#04061a;
+  --line:#e8ebff;
+  --fg:#f1f3ff;
+  --mute:#a3abde;
+  --gold:#ffd25e;
+  --leaf:#6fe3a8;
+  --sky:#82c4ff;
+  --rose:#ff93a3;
+  --amber:#ffb36b;
+  --display:"DotGothic16","Hiragino Kaku Gothic ProN","Yu Gothic",monospace;
+  --body:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(1px 1px at 12% 18%,var(--mute) 50%,transparent 51%),radial-gradient(1px 1px at 78% 9%,var(--mute) 50%,transparent 51%),radial-gradient(1px 1px at 52% 31%,var(--line) 50%,transparent 51%),radial-gradient(1px 1px at 88% 47%,var(--mute) 50%,transparent 51%),radial-gradient(1px 1px at 27% 62%,var(--mute) 50%,transparent 51%);
+  color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.65;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px calc(110px + env(safe-area-inset-bottom,0px));
+}
+main{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.win{border:5px double var(--line);border-radius:10px;background:var(--win);padding:14px 16px;min-width:0}
+.win.warn{border-color:var(--amber)}
+.win.alarm{border-color:var(--rose)}
+.win.calm{border-color:var(--leaf)}
+.wt{font-family:var(--display);font-size:13px;letter-spacing:.12em;color:var(--mute);margin:0 0 8px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance}
+p{margin:0}
+.dot{font-family:var(--display)}
+.mute{color:var(--mute)}
+.small{font-size:13px}
+.num{font-variant-numeric:tabular-nums;font-family:var(--display)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stack{display:flex;flex-direction:column;gap:10px}
+.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.bar{position:relative;height:12px;border:2px solid var(--line);border-radius:3px;background:var(--pit);overflow:hidden;flex:1;min-width:80px}
+.bar>i{display:block;height:100%;background:var(--gold);transition:width .4s}
+.bar.leaf>i{background:var(--leaf)}
+.bar .mark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--line)}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:40px;font:inherit;font-family:var(--display);color:var(--fg);background:var(--win-2);border:2px solid var(--line);border-radius:6px;padding:7px 12px;cursor:pointer;line-height:1.3}
+@media (hover:hover){button:hover{background:var(--line);color:var(--win)}button.gold:hover{background:var(--gold);color:var(--win)}.sk:hover,.esc:hover{background:var(--win-2)}}
+button:active{transform:translateY(1px)}
+.row>button{white-space:nowrap;flex:none}
+button.link{all:unset;cursor:pointer;color:var(--gold);text-decoration:underline;font-size:12px;padding:0 2px}
+.form3{display:grid;grid-template-columns:1fr 1fr 6.5em;gap:8px}
+@media (max-width:420px){.form3{grid-template-columns:1fr 1fr}.form3>:last-child{grid-column:1/-1}}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+button.gold{border-color:var(--gold);color:var(--gold)}
+button.ghost{background:transparent;border-color:var(--mute);color:var(--mute)}
+button.big{font-size:20px;min-width:52px;padding:6px 12px}
+button.on{background:var(--line);color:var(--win)}
+input,textarea,select{font:inherit;font-size:16px;color:var(--fg);background:var(--pit);border:2px solid var(--mute);border-radius:6px;padding:8px 10px;width:100%}
+textarea{min-height:64px;resize:vertical}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mute)}
+.lv{font-family:var(--display);font-size:30px;color:var(--gold);line-height:1}
+.badge{font-family:var(--display);font-size:13px;color:var(--sky)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.stat{border:1px solid var(--win-2);border-radius:6px;padding:6px 8px;text-align:center}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:20px;color:var(--fg)}
+.stat span{font-size:11px;color:var(--mute)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{padding:10px 4px}
+.seg button.e3.on{background:var(--leaf);border-color:var(--leaf);color:var(--win)}
+.seg button.e2.on{background:var(--sky);border-color:var(--sky);color:var(--win)}
+.seg button.e1.on{background:var(--rose);border-color:var(--rose);color:var(--win)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--body);font-size:13px;padding:6px 12px;min-height:36px;border-radius:999px;border:1px solid var(--mute);background:transparent;color:var(--mute)}
+.chip.on{border-color:var(--amber);color:var(--win);background:var(--amber)}
+.card{font-size:16px;line-height:1.7}
+.card .src{font-family:var(--display);font-size:12px;color:var(--gold)}
+.buff{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--win-2)}
+.buff:first-of-type{border-top:0}
+.buff .nm{min-width:0}
+.buff .nm b{font-family:var(--display);font-weight:400}
+.buff .nm small{display:block;color:var(--mute);font-size:12px}
+.buff button{padding:6px 9px;font-size:13px}
+.buff button.full.on{background:var(--gold);border-color:var(--gold);color:var(--win)}
+.buff button.mini.on{background:var(--leaf);border-color:var(--leaf);color:var(--win)}
+.week7{display:flex;gap:3px;margin-top:3px}
+.week7 i{width:8px;height:8px;border-radius:2px;background:var(--pit);border:1px solid var(--win-2)}
+.week7 i.f{background:var(--gold);border-color:var(--gold)}
+.week7 i.m{background:var(--leaf);border-color:var(--leaf)}
+.esc{all:unset;cursor:pointer;display:flex;gap:10px;align-items:flex-start;padding:6px 4px;border-radius:4px;width:100%}
+.esc:focus-visible{background:var(--win-2)}
+.esc .box{font-family:var(--display);width:1.4em;flex:none}
+.esc.on .box{color:var(--leaf)}
+.esc.on .lbl{color:var(--mute);text-decoration:line-through}
+.sk{all:unset;cursor:pointer;display:grid;grid-template-columns:2.6em 1fr auto;gap:8px;align-items:center;padding:7px 4px;border-radius:4px;width:100%}
+.sk:focus-visible{background:var(--win-2)}
+.sk .id{font-family:var(--display);color:var(--mute)}
+.sk .nm{min-width:0}
+.sk.main{background:var(--win-2)}
+.sk.main .id{color:var(--gold)}
+.dom-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}
+.dom-head h2{font-size:18px}
+.pips{display:flex;gap:3px}
+.pip{width:12px;height:12px;border:2px solid var(--mute);border-radius:2px}
+.pip.on{background:var(--leaf);border-color:var(--leaf)}
+.pip.goal{border-color:var(--gold)}
+.pip.on.goal{background:var(--gold)}
+.qm{font-family:var(--display);color:var(--rose);font-size:13px}
+.tag{font-family:var(--display);font-size:12px;border:1px solid var(--gold);color:var(--gold);border-radius:3px;padding:0 5px;white-space:nowrap}
+.tag.rose{border-color:var(--rose);color:var(--rose)}
+.tag.leaf{border-color:var(--leaf);color:var(--leaf)}
+.crit{width:100%;border-collapse:collapse;font-size:13.5px}
+.crit th,.crit td{border-bottom:1px solid var(--win-2);padding:8px 6px;text-align:left;vertical-align:top}
+.crit th{font-family:var(--display);font-weight:400;color:var(--mute);white-space:nowrap}
+.crit tr.here td,.crit tr.here th{background:var(--win-2)}
+.crit tr.here th{color:var(--gold)}
+.scroll{overflow-x:auto}
+.promise{border-top:1px dashed var(--mute);padding-top:10px}
+.promise:first-child{border-top:0;padding-top:0}
+.promise .ttl{font-weight:700}
+.grid28{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.grid28 div{aspect-ratio:1;max-width:100%;border-radius:3px;background:var(--pit);border:1px solid var(--win-2);display:flex;align-items:flex-end;justify-content:center;font-family:var(--display);font-size:10px;color:var(--win)}
+.grid28 .e3{background:var(--leaf);border-color:var(--leaf)}
+.grid28 .e2{background:var(--sky);border-color:var(--sky)}
+.grid28 .e1{background:var(--rose);border-color:var(--rose)}
+.grid28 .t{outline:2px solid var(--gold);outline-offset:1px}
+.entry{border-top:1px dashed var(--mute);padding-top:10px}
+.entry:first-child{border-top:0;padding-top:0}
+.stairs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column-reverse;gap:6px}
+.stairs li{display:grid;grid-template-columns:2.4em 1fr;gap:8px;padding:8px;border-radius:6px;border:1px solid transparent}
+.stairs li.now{border-color:var(--gold);background:var(--win-2)}
+.stairs .no{font-family:var(--display);font-size:20px;color:var(--mute)}
+.stairs li.now .no{color:var(--gold)}
+.stairs li.done .no{color:var(--leaf)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.list li{display:flex;gap:8px;align-items:flex-start;font-size:13.5px}
+.list li .k{font-family:var(--display);color:var(--gold);flex:none}
+.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+.cmp th,.cmp td{padding:6px;border-bottom:1px solid var(--win-2);text-align:right}
+.cmp th:first-child,.cmp td:first-child{text-align:left}
+.cmp th{font-family:var(--display);font-weight:400;color:var(--mute)}
+nav.menu{position:fixed;left:0;right:0;bottom:0;z-index:20;padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+nav.menu .win{max-width:620px;margin:0 auto;padding:6px 6px;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+nav.menu button{all:unset;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:var(--display);font-size:14px;text-align:center;padding:12px 0;border-radius:4px;color:var(--mute);white-space:nowrap}
+nav.menu button::before{content:"▶";color:var(--gold);visibility:hidden;font-size:10px;margin-right:1px}
+nav.menu button.on{color:var(--fg)}
+nav.menu button.on::before{visibility:visible}
+nav.menu button:focus-visible{outline:2px solid var(--gold)}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(4,6,26,.8);display:flex;align-items:flex-end;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.sheet .win{width:100%;max-width:620px;max-height:100%;overflow-y:auto}
+@media (min-width:700px){.sheet{align-items:center}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:50;width:min(92vw,460px);font-family:var(--display);font-size:16px}
+.toast .win{box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast b{color:var(--gold);font-weight:400}
+.banner{display:block;width:100%;max-width:100%;height:150px;object-fit:cover;border-radius:6px;margin-bottom:12px;background:var(--pit)}
+.banner.tall{height:190px}
+.hero-row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;margin-top:10px}
+.hero-row img{width:110px;height:auto;max-width:100%}
+.buff{grid-template-columns:40px 1fr auto auto!important}
+.buff .ic{width:40px;height:40px}
+.buff .ic.off{opacity:.45;filter:grayscale(.6)}
+.tcard{width:min(210px,100%);margin:0 auto;aspect-ratio:225/332;background:center/100% 100% no-repeat;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:34px 26px;gap:8px}
+.tcard.fact{aspect-ratio:226/353;padding-top:50px}
+.tcard.rare{aspect-ratio:252/380;padding:44px 32px}
+.tcard p{font-size:15px;line-height:1.7}
+.toast img{width:72px;height:auto;float:left;margin-right:10px}
+.stairs .th{width:56px;height:56px;object-fit:cover;border-radius:4px;grid-row:span 1}
+.stairs li{grid-template-columns:2.4em 56px 1fr!important}
+.note{font-size:12px;color:var(--mute);text-align:center}
+.del-confirm{color:var(--rose)!important;border-color:var(--rose)!important}
+@keyframes pop{0%{transform:translate(-50%,10px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+.toast{animation:pop .25s ease-out}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.bar>i{transition:none}}
+</style>
+</head>
+<body>
+
+<main id="app" aria-live="polite"></main>
+<nav class="menu" aria-label="メニュー"><div class="win">
+  <button data-tab="today">きょう</button>
+  <button data-tab="promise">やくそく</button>
+  <button data-tab="skill">スキル</button>
+  <button data-tab="log">きろく</button>
+  <button data-tab="star">ほし</button>
+</div></nav>
+<div id="sheet" class="sheet" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const SKILLS = [{"id": "A", "name": "汎用ビジネス力", "layer": "土台", "skills": [{"id": "A1", "name": "イシュー設定", "now": 2, "goal": 4, "lv": {"2": ["テーマを「答えを出すべき問い」1文に言い換え、何が分かれば答えになるかを書ける", "自分の担当論点をイシュー文で書いたものが月2件以上"], "3": ["複数の論点から「今答えるべき1つ」を選び、なぜそれかを説明できる。自分の設定した問いで会議が進む", "自分が設定したイシューで進んだ会議・案件が四半期3件以上"], "4": ["メンバーの論点を一緒にイシューに直せる。チームに論点の型が根づいている", "メンバーのイシュー化を月2件以上支援。チームの会議資料の過半数が論点の型で書かれている"], "5": ["事業全体の「今年答えるべき問い」を3つ以内に絞り、人と予算をそこに張れる", "年間テーマが3つ以内に設定され、予算・人員配分がそれと対応している"]}}, {"id": "A2", "name": "仮説思考・検証", "now": 2, "goal": 4, "lv": {"2": ["情報が揃う前に仮説を立て、何で確かめるかを決めてから動ける", "仮説→検証→結論を月2本以上完了"], "3": ["外れた仮説から次の仮説を立て、速く回せる。検証結果が実際の判断に使われる", "四半期10本以上。うち3本以上が施策・方針の判断に使われた"], "4": ["チームが仮説検証を自分で回せる仕組みがある（テンプレート・定例・記録）", "自分が関与しない検証がチームで月4本以上回っている"], "5": ["事業レベルの大きな仮説（市場・顧客・収益モデル）を立て、検証にどこまでお金と時間をかけるかを判断できる", "年1回以上、検証結果をもとに事業の方向を変えた、または張りを強めた"]}}, {"id": "A3", "name": "構造化・言語化", "now": 4, "goal": 5, "lv": {"2": ["複雑な状況を3〜5の要素に分け、図か文で説明できる", "説明した相手が「分かった」と言い、追加質問なしで動けた件数が月3件以上"], "3": ["起きたことに名前をつけ、周りも使う言葉になる", "自分が名づけた言葉・型を他人が使っている例が年3つ以上"], "4": ["型を文書にして、他人がそれを使って成果を出している", "文書化した型が5つ以上あり、他人が使って成果が出た例が年3件以上"], "5": ["組織の方針・価値観を言葉にし、それが人の判断基準になっている", "メンバーが判断の理由としてその言葉を使っている場面を、月1回以上確認できる"]}}, {"id": "A4", "name": "数字で考える", "now": null, "goal": 4, "lv": {"2": ["PL・BS・CFの基本が読める。家業の売上・粗利・現金残高を把握している", "家業の月次数字を自分で確認し、6ヶ月連続で記録している"], "3": ["数字から課題を特定し、打ち手の効果を事前に試算して、事後に答え合わせできる", "主要な施策の8割以上で事前試算と事後検証をしている"], "4": ["管理の仕組み（KPIの分解図・月次の数字の一覧）をつくり、他人が数字で判断している", "月次KPIが自分の手を介さず毎月更新され、会議で使われている"], "5": ["投資回収や資本効率で、事業同士・投資同士を比べて配分できる", "年間の主要な投資判断すべてに、回収期間と期待リターンの見積もりがある"]}}, {"id": "A5", "name": "伝える・通す", "now": 3, "goal": 4, "lv": {"2": ["結論→理由→根拠の順で、読み手に合わせた資料を書ける", "差し戻しが「中身」ではなく「細部の修正」だけで済む資料が半数以上"], "3": ["決める人と見せる順番を設計して、提案を通せる", "自分の提案の通過率（仮決め含む）が直近10件で6割以上"], "4": ["資料や提案の型をチームに渡し、他人の提案が自分の手直しなしで通る", "チームの提案のうち、自分の手直しなしで通ったものが半数以上"], "5": ["社外の多様な相手（金融機関・大口取引先・採用候補）を自分の話で動かせる", "資金・大口契約・重要な採用のいずれかを、年1件以上自分の説明で決めた"]}}, {"id": "A6", "name": "閉じる力", "now": 2, "goal": 5, "lv": {"2": ["自分の担当範囲を期限内に終わらせられる", "自分の担当タスクの期限遵守率8割以上"], "3": ["未決の論点を自分で仮決めし、会議では確認だけにできる", "台帳の未決比率5割以下（今は約8割）。論点の平均滞留30日以内"], "4": ["チーム内で止まっている論点を見つけ、持ち主と期限を決めて閉じさせられる", "チームの論点の平均滞留30日以内を3ヶ月連続で維持"], "5": ["「やらないこと」を決めて、組織の負荷を減らせる", "四半期ごとに、やめた業務・会議・施策が3つ以上ある"]}}, {"id": "A7", "name": "学習ループ", "now": 2, "goal": 4, "lv": {"2": ["読んだ・聞いたことを、業務で1つ試せる", "インプットから業務で試したことが月1件以上"], "3": ["インプット→実践→振り返りが習慣として回っている", "週次の3行振り返りを13週中11週以上。四半期の振り返りを実施"], "4": ["学びを型にしてチームに渡し、チームの学習も回している", "チームの振り返りの場が定例化し、3ヶ月以上続いている"], "5": ["組織に学ぶ文化があり、自分がいなくても学びが共有される", "自分以外の人が主催する学びの共有が月1回以上ある"]}}]}, {"id": "M", "name": "マーケター", "layer": "武器", "skills": [{"id": "M1", "name": "顧客理解・インサイト", "now": 3, "goal": 4, "lv": {"2": ["顧客に直接話を聞き、表面の要望と本当の困りごとを分けて書ける", "顧客への直接ヒアリングが月3件以上"], "3": ["顧客自身も言葉にしていない「選ぶ理由・やめる理由」を見つけ、打ち手につなげられる", "見つけたインサイトから生まれた施策が年3件以上、うち1件以上で成果"], "4": ["顧客の声を集めて共有する仕組みがあり、チームが顧客起点で考えている", "顧客の声が月1回以上チームに共有され、施策の根拠として使われている"], "5": ["顧客理解の質で、人やパートナー（代理店・調査会社）の良し悪しを見抜ける", "外部パートナーの選定・評価を自分の基準で行い、成果が出ている"]}}, {"id": "M2", "name": "戦略・ポジショニング", "now": 2, "goal": 4, "lv": {"2": ["誰に・何を・なぜ自社か（競合と比べて）を1枚で書ける", "自分が関わる事業・商品のポジショニングを文書化している"], "3": ["戦う場所と戦わない場所を決め、その戦略で結果を出せる", "自分が設計した戦略で、狙った顧客層の売上またはシェアが前年比で伸びた"], "4": ["戦略を組織の行動（営業・商品・発信）に落とし込み、全員が同じ方向で動いている", "メンバーに聞いて、8割以上が「誰に何を売るか」を同じ言葉で答えられる"], "5": ["複数の事業の戦略を見て、筋の良し悪しを判断できる", "任せた事業の戦略の見直し判断を年1回以上行い、結果が出ている"]}}, {"id": "M3", "name": "コンセプト・クリエイティブ", "now": 3, "goal": 4, "lv": {"2": ["商品・企画のコンセプトを一言で言え、それに沿った表現を指示できる", "自分がコンセプトを決めた企画・表現物が年3件以上"], "3": ["コンセプトが人を動かし、数字に表れる", "コンセプトを変えた施策で、反応率・成約率などが比較対象より改善した例が年2件以上"], "4": ["クリエイティブの判断基準を言語化し、他人が自分抜きで良い表現をつくれる", "自分の確認なしで出た表現物のうち、成果基準を満たしたものが半数以上"], "5": ["クリエイターや制作会社を見抜いて任せられる", "起用した外部クリエイターの継続起用率と成果を管理し、入れ替え判断ができている"]}}, {"id": "M4", "name": "チャネル・集客", "now": 3, "goal": 3, "lv": {"2": ["主要チャネル（Web・SNS・紹介・展示会など）の特徴を知り、1つで集客できる", "1つのチャネルで狙った数の問い合わせ・見込み客を獲得した"], "3": ["事業に合うチャネルを選び、費用対効果で配分を変えられる", "チャネル別の獲得単価を把握し、配分を変えて全体の獲得単価を改善した"], "4": ["集客の運用を他人に任せても、獲得単価・件数が維持される", "運用を任せて3ヶ月、獲得単価と件数が目標範囲内"], "5": ["集客の外部パートナーを見抜き、投資額を判断できる", "年間の集客投資額と回収見込みを決め、その範囲で成果が出ている"]}}, {"id": "M5", "name": "ブランドづくり", "now": 2, "goal": 4, "lv": {"2": ["「何者として、どう覚えられたいか」を言葉にできる", "ブランドの約束を1文で定義し、文書化している"], "3": ["言葉・見た目・接客・商品が同じ約束に揃い、指名されるようになる", "「名指しで来た」顧客・問い合わせの比率が把握でき、前年より増えた"], "4": ["ブランドの基準が組織に根づき、自分がいなくても一貫している", "顧客接点のチェックで、基準から外れている箇所が1割以下"], "5": ["ブランドを資産として扱い、価格や採用の強さに変えられている", "価格を下げずに選ばれている、または採用応募の質が上がっていることを数字で示せる"]}}, {"id": "M6", "name": "計測と改善", "now": 3, "goal": 4, "lv": {"2": ["施策の前に「何をどう測るか」を決められる", "自分の施策の8割以上で、事前に指標を決めている"], "3": ["結果を見て改善を回し、指標を動かせる", "四半期で、改善によって主要指標を2割以上動かした施策が1件以上"], "4": ["計測・改善の仕組みがあり、チームが自分で回している", "自分抜きで、指標の確認と改善が月次で回っている"], "5": ["指標の設計そのものの良し悪しを判断できる", "事業のKPIを見直し、その結果として事業の判断が速くなった例がある"]}}]}, {"id": "S", "name": "営業", "layer": "武器", "skills": [{"id": "S1", "name": "新規開拓", "now": null, "goal": 3, "lv": {"2": ["見込み先を自分でリストにし、接触して商談に持ち込める", "自分で開拓した新規商談が四半期3件以上"], "3": ["狙った層の新規先から、継続的な取引を取れる", "自分で開拓した新規取引先が年5社以上、うち半数以上が3ヶ月以上継続"], "4": ["開拓の手順を型にし、他人が同じように新規を取れる", "自分以外の人が、型を使って新規取引先を年3社以上獲得"], "5": ["開拓を任せる人を見抜き、開拓にかける費用と人を判断できる", "新規開拓の担当と予算を決め、新規売上の目標を達成している"]}}, {"id": "S2", "name": "ヒアリング・課題発見", "now": 3, "goal": 4, "lv": {"2": ["相手の状況・課題・影響・理想を、順番に聞き出せる", "商談記録の8割以上に、相手の課題とその影響が書かれている"], "3": ["相手が気づいていない課題を見つけ、商談の規模を広げられる", "初回の相談内容より大きな提案につながった商談が四半期2件以上"], "4": ["ヒアリングの型を他人に教え、商談の質を揃えられる", "教えた相手の商談記録の質が、自分の基準を満たしている"], "5": ["商談記録から、営業担当の力量を見抜ける", "担当の配置換え・育成の判断を、商談の質を根拠に行っている"]}}, {"id": "S3", "name": "提案", "now": 3, "goal": 4, "lv": {"2": ["課題に対して、価値と費用が分かる提案書をつくれる", "自分で書いた提案が四半期3件以上"], "3": ["相手の社内で通る形（決める人・比較対象・費用対効果）まで設計して提案できる", "直近10件の提案の受注率4割以上"], "4": ["提案の型をチームで使い、受注率が揃っている", "チームの受注率が自分の受注率の8割以上"], "5": ["大型案件の勝ち筋と、張るべき案件を見極められる", "張った大型案件の受注率が5割以上"]}}, {"id": "S4", "name": "クロージング・価格交渉", "now": null, "goal": 3, "lv": {"2": ["次の一歩と期限を決めて商談を終えられる。値引き以外の交渉材料を持てる", "商談の8割以上で、次の行動と期限が決まった状態で終わっている"], "3": ["値引きに頼らず、価値で価格を守って決めきれる", "年間の平均値引き率を前年より下げつつ、受注数を維持"], "4": ["価格の決め方と値引きのルールを決め、チームが守っている", "値引きの例外承認が月数件以内に収まっている"], "5": ["価格戦略そのもの（値上げ・取引条件の変更）を判断できる", "値上げや条件変更を実施し、取引先の8割以上を維持した"]}}, {"id": "S5", "name": "関係構築・取引拡大", "now": null, "goal": 4, "lv": {"2": ["取引先と定期的に接点を持ち、相談される関係をつくれる", "主要取引先との接点が月1回以上"], "3": ["既存取引先の取引額を広げられる", "自分の担当先の取引額が前年比で1割以上増加"], "4": ["取引先との関係を自分以外の担当に引き継いでも、取引が続く", "引き継いだ取引先の1年後の継続率8割以上"], "5": ["取引先の構成（どこに依存しているか）を見て、守る先・育てる先・手放す先を判断できる", "上位取引先への売上依存度を把握し、目標範囲に収めている"]}}, {"id": "S6", "name": "営業の仕組み化", "now": 1, "goal": 4, "lv": {"2": ["自分の営業の流れを書き出し、どの段階で何件あるかを把握できる", "自分の商談を段階別に記録し、月次で見ている"], "3": ["段階ごとの数字から、どこを直せば売上が増えるかを特定して改善できる", "一番弱い段階の転換率を改善し、売上につなげた例がある"], "4": ["営業の流れ・指標・定例を組織に入れ、自分なしで回っている", "営業の月次の数字が自分の手を介さず集計され、改善が回っている"], "5": ["営業組織の設計（人数・役割分担・評価）を判断できる", "営業組織の設計を見直し、一人あたりの売上が上がった"]}}]}, {"id": "B", "name": "事業家", "layer": "立場", "skills": [{"id": "B1", "name": "事業の仮説検証", "now": 2, "goal": 4, "lv": {"2": ["事業の成否を分ける前提（顧客・価格・獲得方法）を書き出し、1つ検証できる", "事業の前提の検証を年2件以上完了"], "3": ["検証の結果で、施策や商品を変える判断ができる", "検証結果をもとに、施策・商品・価格を変更した例が年3件以上"], "4": ["事業の検証計画を組織で回し、検証の優先順位をつけられる", "四半期ごとの検証計画があり、8割以上が実施されている"], "5": ["複数の事業の検証状況を見て、続ける・やめる・張るを判断できる", "年1回以上、検証結果をもとに事業の撤退または投資拡大を決めた"]}}, {"id": "B2", "name": "戦略設定", "now": 2, "goal": 4, "lv": {"2": ["担当事業の「勝ち方」を、市場・顧客・競合・自社から説明できる", "担当事業の戦略を1枚で書いている"], "3": ["3年程度の戦略を描き、年度の計画と施策に落とせる", "戦略に紐づいた年度計画があり、主要な数字の目標を達成した"], "4": ["戦略を組織に浸透させ、メンバーの判断が戦略と揃っている", "メンバーに聞いて、8割以上が自分の仕事と戦略のつながりを説明できる"], "5": ["戦略を任せた人の戦略の良し悪しを判断し、修正できる", "任せた事業の戦略レビューを年2回以上行い、修正が成果につながった"]}}, {"id": "B3", "name": "事業計画・数字管理", "now": null, "goal": 4, "lv": {"2": ["売上・費用・利益の年間計画を立て、月次で計画と実績を比べられる", "担当範囲の月次の計画・実績比較を6ヶ月以上続けている"], "3": ["計画とのずれを早く見つけ、手を打って着地させられる", "年間計画に対して、利益の着地が計画の±1割以内"], "4": ["計画づくりと月次管理の仕組みを、他人が回している", "自分以外の人が計画を立て、月次管理を回している"], "5": ["計画の数字の妥当性を見抜き、目標の水準を決められる", "任せた事業の計画を見て、水準の引き上げ・引き下げを判断している"]}}, {"id": "B4", "name": "資源配分", "now": 2, "goal": 5, "lv": {"2": ["自分の時間とチームの工数を、優先順位で配分できる", "自分の週の時間のうち、最重要テーマに使った割合を把握している"], "3": ["人・お金・時間を、成果の出るところに寄せる判断ができる", "配分を変えた結果、担当範囲の成果指標が改善した例が年2件以上"], "4": ["配分の基準をつくり、他人がその基準で配分できる", "予算・人員配分の基準が文書化され、使われている"], "5": ["事業・投資の間で、お金と人の配分を決められる", "年1回以上、事業間の配分を見直し、全体の利益が上がった"]}}, {"id": "B5", "name": "意思決定", "now": 2, "goal": 5, "lv": {"2": ["判断材料を揃え、選択肢と推奨案を出せる", "「推奨案つき」で判断を上げた件数が月3件以上"], "3": ["自分の権限内のことを、材料が揃いきる前に決めきれる。判断の理由を残し、後で答え合わせできる", "自分で決めた件数が月5件以上。判断日誌をつけ、四半期ごとに答え合わせ"], "4": ["判断の基準を他人に渡し、自分に上がってくる判断を減らせる", "自分に上がってくる判断の件数が、半年前より3割以上減った"], "5": ["戻せない大きな判断（投資・撤退・採用・承継）を、期限内に決められる", "戻せない判断を、期限を延ばさずに決めた例が年2件以上"]}}, {"id": "B6", "name": "マネジメント・育成", "now": 2, "goal": 4, "lv": {"2": ["メンバーの強みを把握し、強みに合った仕事を渡せる", "メンバー全員について、強みと任せる仕事を書いている"], "3": ["目標設定・定期面談・評価を回し、メンバーの成果を引き出せる", "定期面談を月1回以上全員と実施。メンバーの目標達成率が7割以上"], "4": ["自分の次のリーダーを育てられる", "自分の担当範囲を任せられる人が1人以上いる"], "5": ["リーダーを見抜いて置き、リーダーが育成を回している", "自分が置いたリーダーの下で、メンバーが育っている（昇格・役割拡大が年1件以上）"]}}, {"id": "B7", "name": "根回し・合意形成", "now": 2, "goal": 4, "lv": {"2": ["提案の前に、誰に・どの順番で見せるかを決められる", "重要な提案の8割以上で、事前に見せる相手と順番を決めている"], "3": ["反対しそうな人を先に巻き込み、会議の場で決まる状態をつくれる", "重要な提案の通過率（初回）が6割以上"], "4": ["部門をまたぐ論点でも、関係者を揃えて決められる", "部門横断の合意を年3件以上まとめた"], "5": ["社外（取引先・業界・金融機関）も含めて、利害の違う人を同じ方向に動かせる", "社外を含む合意形成で、事業上の成果（提携・条件改善など）を年1件以上"]}}]}, {"id": "E", "name": "起業家", "layer": "立場", "skills": [{"id": "E1", "name": "機会発見・市場の嗅覚", "now": 2, "goal": 4, "lv": {"2": ["現場の不便や変化から、事業になりそうな機会を書き出せる", "機会メモを月2件以上残している"], "3": ["機会を「誰の・どんな困りごとに・いくら払うか」まで具体化し、小さく確かめられる", "機会のうち、顧客に直接確かめたものが年5件以上"], "4": ["機会を見つける仕組み（情報源・人脈・定点観測）がある", "自分以外から持ち込まれる事業の相談・機会が月1件以上"], "5": ["持ち込まれた機会の良し悪しを見抜き、関わるかどうかを選べる", "年間で関わる事業・投資先を選んで決め、断った件数も記録している"]}}, {"id": "E2", "name": "0→1の検証", "now": 1, "goal": 4, "lv": {"2": ["最小の形（試作・告知ページ・テスト販売）で、顧客の反応を確かめられる", "小さな検証を年2本以上実施"], "3": ["検証から、お金を払う顧客を生み出せる", "自分が立ち上げたもので、有料顧客が10人（社）以上"], "4": ["検証から事業化までの流れを型にし、他人と回せる", "チームで立ち上げた事業が、黒字化した"], "5": ["他人の0→1を見て、伸びるかどうかを判断して支援できる", "支援・出資した立ち上げ案件のうち、事業として続いているものがある"]}}, {"id": "E3", "name": "スピード・実現力", "now": 2, "goal": 4, "lv": {"2": ["決めたことを、完成度より速さを優先して形にできる", "アイデアから最初の検証まで4週間以内"], "3": ["限られた人と資金で、計画した時期に事業を立ち上げられる", "計画した立ち上げ時期からの遅れが1ヶ月以内"], "4": ["チームの実行速度を上げる仕組み（短い周期・決める場）を持てる", "チームの施策が2週間単位で回っている"], "5": ["速く動ける人を見抜いて任せ、自分は止まっているものだけ外せる", "止まっていた案件を、自分の判断1回で動かした例が四半期1件以上"]}}, {"id": "E4", "name": "資金繰り・資金調達", "now": 1, "goal": 3, "lv": {"2": ["事業の現金の出入りを月次で予測できる", "3ヶ月先までの資金繰り表を毎月更新している"], "3": ["必要な資金を、融資・出資・自己資金から選んで確保できる", "資金を自分で確保した（融資・出資・補助金など）例が1件以上。現金が尽きる心配のない月数を把握している"], "4": ["資金繰りの管理を他人に任せても、現金がショートしない", "経理担当が資金繰りを回し、自分は月1回の確認だけ"], "5": ["事業ごとの資金の出し方（借りる・出資を受ける・自分で出す）を判断できる", "事業ごとに資金の出し方を決め、条件の比較を行っている"]}}, {"id": "E5", "name": "初期メンバー集め", "now": 1, "goal": 4, "lv": {"2": ["自分の事業に、手伝ってくれる人を1人集められる", "業務委託・副業も含め、一緒に動く人が1人以上"], "3": ["必要な役割を決めて、合う人を集められる", "3〜5人のチームを組み、半年以上続いている"], "4": ["採用の流れと基準があり、他人が採用を進めている", "自分以外の人が面接・判断した採用が年1件以上"], "5": ["中核の人（経営を任せる人）を見抜いて口説ける", "事業の責任者を外から、または中から登用した"]}}, {"id": "E6", "name": "ミッションで人を惹きつける", "now": 2, "goal": 4, "lv": {"2": ["ミッションを自分の言葉で、具体的な場面と一緒に語れる", "ミッションを1分で話す型があり、人前で月1回以上話している"], "3": ["ミッションに共感した人が、自分から関わりに来る", "ミッションをきっかけに来た協力者・顧客・応募者が年5人以上"], "4": ["ミッションが組織の判断基準として使われ、自分以外の人も語っている", "メンバーが採用や顧客への説明でミッションを語っている"], "5": ["ミッションに合う事業・人・投資先を選ぶ軸として使えている", "関わる事業を選ぶ判断で、ミッションとの一致を基準にしている"]}}]}, {"id": "O", "name": "オーナー", "layer": "立場・最終目標", "skills": [{"id": "O1", "name": "人を見る目・採用", "now": 3, "goal": 5, "lv": {"2": ["メンバーの強み・弱み・生かし方を言葉にできる", "関わるメンバー全員について、強みと生かし方を書いている"], "3": ["人を見て、役割と配置を提案し、それが当たる", "自分が提案した配置・役割変更のうち、成果が出たものが7割以上"], "4": ["採用の判断基準を言葉にして、他人もその基準で人を見られる", "採用基準が文書化され、自分以外の面接官が使っている"], "5": ["経営を任せる人を見抜いて置ける", "自分が選んで置いた責任者が、2年以上成果を出し続けている"]}}, {"id": "O2", "name": "任せる", "now": 2, "goal": 5, "lv": {"2": ["自分の仕事を書き出し、任せる仕事と自分がやる仕事を分けられる", "自分の業務一覧があり、任せる候補に印がついている"], "3": ["仕事を、目的・期限・判断の範囲をつけて任せ、口を出さずに待てる", "任せた仕事が月3件以上、うち8割以上が手戻りなく完了"], "4": ["任せた人がさらに人に任せ、仕事が自分から離れて回っている", "自分の週の作業時間が、半年前より3割以上減った（同じ成果のまま）"], "5": ["結果だけを見て、任せた人への支援・交代を判断できる", "1ヶ月自分がいなくても、事業の主要指標が維持された"]}}, {"id": "O3", "name": "仕組み化", "now": 2, "goal": 5, "lv": {"2": ["自分がやっている業務の手順を書き出せる", "主要業務の手順書が3つ以上ある"], "3": ["手順書・チェックリスト・定例で、他人が同じ品質でできるようにする", "手順書を使って他人が担当し、ミスが許容範囲内に収まっている業務が3つ以上"], "4": ["例外対応まで含めて、自分に聞かずに回る仕組みがある", "現場から自分への確認連絡が、半年前より半分以下"], "5": ["仕組みの良し悪しを見て、直すべきところだけ指示できる", "1ヶ月の不在で、事業の主要指標が維持された（家業・自分の事業の両方）"]}}, {"id": "O4", "name": "資本配分・投資判断", "now": 1, "goal": 4, "lv": {"2": ["投資（設備・人・システム）の回収期間を計算できる", "家業の投資案件で、回収期間の試算を1件以上行った"], "3": ["複数の投資案を比べて選び、事後に回収を確認できる", "自分が判断した投資のうち、計画どおり回収できたものが7割以上"], "4": ["投資判断の基準と手順をつくり、他人が案を出してくる", "現場から投資案が、基準に沿った形で上がってくる"], "5": ["事業の利益をどこに再投資・分配・蓄積するかを決められる", "年1回、利益の使い道（再投資・分配・蓄積）を決める場を持っている"]}}, {"id": "O5", "name": "資産形成", "now": null, "goal": 4, "lv": {"2": ["自分と家族の資産・負債・収支を把握している", "家計の資産と収支を、年1回以上一覧にしている"], "3": ["目標資産額と、そこまでの道筋（収入源・貯蓄・運用）を決めて実行している", "目標資産額が数字で決まっていて、年間の積み上げ目標を達成している"], "4": ["給与以外の収入源（事業の持ち分・配当など）がある", "給与以外の収入が、年間収入の一定割合（目標を自分で設定）を超えた"], "5": ["資産の配分を専門家と組んで判断し、事業と資産を一体で管理している", "目標資産額に到達、または到達時期の見通しが立っている"]}}, {"id": "O6", "name": "人脈・信頼", "now": null, "goal": 4, "lv": {"2": ["業界の内外に、相談できる人がいる", "半年に1回以上会う、仕事の相談ができる人が10人以上"], "3": ["自分が人と人をつなぎ、つないだ先で価値が生まれている", "自分の紹介から生まれた商談・協業が年3件以上"], "4": ["自分のところに、紹介や相談が自然に集まる", "自分宛てに来る紹介・相談が月2件以上"], "5": ["信頼の厚さで、良い事業・人・機会に優先して声がかかる", "公開前の事業・投資・採用の話が、年3件以上自分に来ている"]}}, {"id": "O7", "name": "人としての魅力", "now": null, "goal": 4, "lv": {"2": ["自分の考えや経験を、人が面白がる形で話せる", "自分の話をきっかけに、相手から質問や次の約束が生まれた場面が月数回ある"], "3": ["「また会いたい」「一緒にやりたい」と言われる", "自分から誘わずに、相手から誘われる機会が月2回以上"], "4": ["自分の考えを発信し、知らない人にも届いている", "発信（記事・登壇・SNSなど）を年6回以上。発信をきっかけにした連絡が年5件以上"], "5": ["人が集まる場を自分でつくれる", "自分が主催する集まり・コミュニティが続いている"]}}, {"id": "O8", "name": "持続力：健康・家族・余力", "now": 2, "goal": 4, "lv": {"2": ["自分の余力の状態を把握し、下がっていることに気づける", "週次の振り返りで、余力を3段階で記録している"], "3": ["睡眠・運動・家族の時間を、仕事より先に予定に入れている", "家族との時間・休息が予定どおり取れた週が8割以上"], "4": ["繁忙期でも崩れない生活の型がある", "余力「低」の週が、四半期で2週以内"], "5": ["仕事と生活の境目がなく、それでも消耗していない", "10年後の姿（家族との時間が多く、やりたい仕事を選べている）を自分で「できている」と言える"]}}]}, {"id": "I", "name": "AI活用", "layer": "全部の掛け算", "skills": [{"id": "I1", "name": "自分の仕事のAI化", "now": 4, "goal": 5, "lv": {"2": ["日常の作業（文章・調べもの・整理）をAIに任せられる", "毎日AIを業務で使っている"], "3": ["自分の仕事の流れ（記録・論点管理・資料作成）をAI前提で組み直せる", "AIで置き換えた業務で、週5時間以上を浮かせている"], "4": ["自分のやり方を型にして、他人が真似できる", "自分の型を他人に教え、その人も時間を浮かせた例が2件以上"], "5": ["浮いた時間を、自分にしかできない判断と人に使えている", "週の時間のうち、判断・人・関係づくりに使う割合が半分以上"]}}, {"id": "I2", "name": "チーム業務のAI設計", "now": 2, "goal": 4, "lv": {"2": ["チームの業務からAIで置き換えられるものを見つけ、試せる", "チームの業務でAI化を試した件数が四半期2件以上"], "3": ["チームの業務の流れをAI前提で組み直し、定着させられる", "定着したAI業務が3つ以上、チームの工数削減を数字で示せる"], "4": ["メンバーが自分でAI化を進める文化と仕組みがある", "自分以外のメンバー発のAI化が四半期2件以上"], "5": ["AI前提で人員計画を立てられる", "AI活用を前提にした人員・役割の計画を立て、実行している"]}}, {"id": "I3", "name": "現場へのAI導入", "now": 1, "goal": 4, "lv": {"2": ["家業の業務（受発注・相場・連絡・記録など）から、AIや仕組みで置き換えられるものを見つけられる", "家業の業務一覧があり、置き換え候補が5つ以上挙がっている"], "3": ["デジタルに慣れていない現場の人でも使える形で、1つ定着させられる", "家業で、現場の人が毎日使っている仕組みが1つ以上"], "4": ["現場の業務の複数をAI・仕組みで置き換え、自分がいなくても回る", "家業で置き換えた業務が3つ以上、現場の工数削減を数字で示せる"], "5": ["同業他社や他の現場にも展開できる", "家業での型を、他社・他の現場に提供した例がある"]}}, {"id": "I4", "name": "AI前提の事業設計", "now": 2, "goal": 5, "lv": {"2": ["事業の中で、AIで価値や原価が大きく変わる部分を見つけられる", "担当事業でAIによる改善案を年2件以上出している"], "3": ["AIを前提に、少人数で回る事業の形を設計し、試せる", "AI前提で設計した事業・サービスを1つ立ち上げた"], "4": ["AI前提の事業が、一人あたり売上で一般的な水準を上回っている", "一人あたり売上（または利益）を同業と比べて示せる"], "5": ["AIで何が変わるかを見て、関わる事業・投資先を選べる", "AIによる変化を判断軸にした事業・投資の選択を年1件以上"]}}, {"id": "I5", "name": "AIの品質・リスク管理", "now": 3, "goal": 4, "lv": {"2": ["1年半〜3年", "お金を生む | S1 新規開拓 Lv3／S5 取引拡大 Lv3／A4 数字で考える Lv3／B3 数字管理 Lv3 | 自分の打ち手で家業の粗利が前年比1割以上増"], "3": ["3〜5年", "小さく0→1 | E2 0→1の検証 Lv3／E5 初期メンバー Lv3／M5 ブランド Lv3／E4 資金繰り Lv3 | 自分以外の人に給料を払って黒字"], "4": ["5〜7年", "持ち主になる | O1 人を見る目 Lv5／O2 任せる Lv5／B4 資源配分 Lv4／B5 意思決定 Lv5 | 家業・自分の事業とも、1ヶ月の不在で主要指標が維持"], "5": ["7〜10年", "選んで関わる | O4 資本配分 Lv4／O5 資産形成 Lv4〜5／O6 人脈 Lv5 | 目標資産額に到達、または到達の見通しが立ち、関わる事業を選べている"]}}]}];
+const STAGES_DEFAULT = [
+  {no:1,span:"",theme:"第1段",title:"見習い",goal:"「ほし」で卒業条件を決めよう"},
+  {no:2,span:"",theme:"第2段",title:"商人",goal:""},
+  {no:3,span:"",theme:"第3段",title:"起業家",goal:""},
+  {no:4,span:"",theme:"第4段",title:"持ち主",goal:""},
+  {no:5,span:"",theme:"第5段",title:"選んで関わる者",goal:""}
+];
+const stages = () => (S.stages && S.stages.length === 5 ? S.stages : STAGES_DEFAULT);
+const SIGNS = ["眠りが浅い","休みも仕事が頭から離れない","自分がいないと回らないと感じる","日曜の夜がゆううつ","会議中ぼーっとする","人と比べて落ちた","指摘が重なっている","余力がない"];
+const ESCAPE = [
+  {id:"mini",t:"最小版のバフを1つやる（スクワット10回、3呼吸など）"},
+  {id:"chest",t:"「ほし」の宝箱を開いて、自分がやってきた事実を見る"},
+  {id:"talk",t:"本音で話せる人に、一言だけ連絡する"},
+  {id:"one",t:"やるべきなのに手をつけていない「名前のつく具体的な一個」を書く。書けなければ、それは事実ではなく波"},
+  {id:"drop",t:"今週やらなくていいことを1つ決めて、手放す"}
+];
+const MODE = {
+  3:{name:"攻めの日",t:"企画、提案、商談、新しい挑戦。全力で走っていい日。同時に走るのは2つまで"},
+  2:{name:"淡々の日",t:"決めたことを淡々と進める。会議、資料、チームへの指示"},
+  1:{name:"充電の日",t:"守りの仕事か、思い切って休む。最小版のバフを1つやれば十分。今日は次の波のエネルギーを溜める日"}
+};
+const ALL = {};
+SKILLS.forEach(d => d.skills.forEach(s => { ALL[s.id] = Object.assign({}, s, {domain: d}); }));
+const KEY = "owner-quest-fb";
+
+/* ---------- dates ---------- */
+const pad = n => String(n).padStart(2, "0");
+const fmt = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const today = () => fmt(new Date());
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmt(d); };
+const weekKey = s => { const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return fmt(d); };
+const md = s => { const d = parse(s); return (d.getMonth() + 1) + "/" + d.getDate(); };
+const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
+const dow = s => parse(s).getDay();
+const WD = ["日","月","火","水","木","金","土"];
+
+/* ---------- state ---------- */
+function defaults() {
+  const skills = {};
+  for (const id in ALL) skills[id] = ALL[id].now;
+  return {
+    v: 2, xp: 0, stage: 1,
+    north: {mission: "", being: "", earn: "", work: "", legacy: "", vision10: ""},
+    asset: "",
+    affirm: [], facts: [], stages: STAGES_DEFAULT.map(x => Object.assign({}, x)),
+    buffs: [
+      {id: "journal", name: "ジャーナリング", full: "思ったことを書き出す", mini: "1行だけ書く"},
+      {id: "move", name: "筋トレ・運動", full: "汗をかくまで動く", mini: "スクワット10回"},
+      {id: "affirm", name: "アファメーション", full: "声に出して読む", mini: "1つだけ読む"},
+      {id: "meditate", name: "瞑想", full: "5分以上", mini: "3呼吸"},
+      {id: "posture", name: "姿勢", full: "姿勢を意識して過ごした", mini: "今、背筋を伸ばす"},
+      {id: "star", name: "ほしを確認", full: "北極星を読み返す", mini: "あり方の一文だけ見る"}
+    ],
+    starAdded: true,
+    days: {}, weeks: {}, promises: [], escapes: [],
+    season: {
+      no: 1, main: "S3", quest: "最初のクエストを決めよう（「クエストを編集」から）",
+      base: 3, stretch: 5, progress: 0, start: today(), end: addDays(today(), 41),
+      question: "", tool: "", rule: "", gotBase: false, gotStretch: false, log: []
+    },
+    history: [], skills, slog: [], ideas: []
+  };
+}
+function merge(o) {
+  const d = defaults();
+  if (o.buffs && !o.starAdded) { if (!o.buffs.some(b => b.id === "star")) o.buffs = o.buffs.concat(d.buffs.find(b => b.id === "star")); o.starAdded = true; }
+  return Object.assign(d, o, {
+    north: Object.assign(d.north, o.north || {}),
+    stages: o.stages && o.stages.length === 5 ? o.stages : d.stages,
+    skills: Object.assign(d.skills, o.skills || {}),
+    season: Object.assign(d.season, o.season || {})
+  });
+}
+let S = defaults();
+let tab = "today", cardShift = 0;
+
+/* ---------- storage: Firebase (Google login + Firestore, one private doc per user) ---------- */
+let ref = null, unsub = null, saving = false, again = false, timer = null, pendingLocal = false, syncText = "";
+let authReady = false, currentUser = null, loginError = "", LOCAL = false;
+function save() {
+  try { if (currentUser) localStorage.setItem(KEY + ":" + currentUser.uid, JSON.stringify(S)); } catch (e) {}
+  pendingLocal = true; clearTimeout(timer); timer = setTimeout(flush, 600);
+}
+async function flush() {
+  if (!ref) { pendingLocal = false; return; }
+  if (saving) { again = true; return; }
+  saving = true;
+  try { await ref.set(JSON.parse(JSON.stringify(S))); setSync("クラウドに保存しました（どの端末からでも続きができます）"); }
+  catch (e) { setSync("クラウドに保存できませんでした（" + (e.code || "error") + "）。通信を確認してください"); }
+  saving = false;
+  if (again) { again = false; flush(); } else pendingLocal = false;
+}
+function setSync(t) { syncText = t; const el = document.getElementById("sync"); if (el) el.textContent = t; }
+function initCloud() {
+  if (!window.FIREBASE_CONFIG || !window.FIREBASE_CONFIG.apiKey || !window.firebase) {
+    LOCAL = true; authReady = true; currentUser = {uid: "local", email: ""};
+    try { const c = localStorage.getItem(KEY + ":local"); if (c) S = merge(JSON.parse(c)); } catch (e) {}
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+    setSync("このスマホの中に保存しています");
+    render(); return;
+  }
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  const auth = firebase.auth(), db = firebase.firestore();
+  auth.getRedirectResult().catch(e => { loginError = e.message; render(); });
+  auth.onAuthStateChanged(u => {
+    authReady = true; currentUser = u;
+    if (unsub) { unsub(); unsub = null; }
+    ref = null; S = defaults();
+    if (u) {
+      try { const c = localStorage.getItem(KEY + ":" + u.uid); if (c) S = merge(JSON.parse(c)); } catch (e) {}
+      ref = db.collection("users").doc(u.uid);
+      setSync("クラウドに接続しています…");
+      unsub = ref.onSnapshot({includeMetadataChanges: false}, snap => {
+        setSync("クラウドに保存しています（どの端末からでも続きができます）");
+        if (pendingLocal || saving || snap.metadata.hasPendingWrites) return;
+        if (snap.exists) {
+          S = merge(JSON.parse(JSON.stringify(snap.data())));
+          try { localStorage.setItem(KEY + ":" + u.uid, JSON.stringify(S)); } catch (e) {}
+        }
+        render();
+      }, err => setSync("同期できませんでした（" + err.code + "）"));
+    }
+    render();
+  });
+}
+function login() {
+  loginError = "";
+  const p = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(p).catch(e => {
+    if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(p);
+    else if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") { loginError = e.message; render(); }
+  });
+}
+function loginView() {
+  return '<section class="win" style="text-align:center"><img src="img/hero_high.webp" alt="" style="width:160px;max-width:100%;margin:0 auto 8px;display:block"><h1 style="font-size:24px">オーナーへの冒険</h1><p class="small mute" style="margin:8px 0 16px">記録はあなたのGoogleアカウントにだけ保存されます。</p>' +
+    (authReady ? '<button class="gold" data-act="login" style="width:100%">Googleでログイン</button>' : '<p class="mute">読み込み中…</p>') +
+    (loginError ? '<p class="small" style="color:var(--rose);margin-top:12px">' + esc(loginError) + "</p>" : "") + "</section>";
+}
+function markBackup() { S.lastBackup = today(); save(); }
+function exportData() {
+  markBackup();
+  const blob = new Blob([JSON.stringify(S, null, 2)], {type: "application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "owner-quest-backup-" + today() + ".json";
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function importData(file) {
+  const r = new FileReader();
+  r.onload = () => importText(r.result);
+  r.readAsText(file);
+}
+function importText(txt) {
+  {
+    try {
+      const o = JSON.parse(String(txt).trim());
+      if (o.starter) {
+        ["north", "affirm", "facts", "stages"].forEach(k => { if (o[k]) S[k] = o[k]; });
+        if (o.season && S.season.progress === 0 && S.season.no === 1) Object.assign(S.season, o.season);
+        toast("自分のデータを読み込んだ。");
+      } else if (o.days && o.skills) { S = merge(o); toast("バックアップから戻した。"); }
+      else { toast("このファイルは読み込めませんでした。"); return; }
+      save(); render();
+    } catch (e) { toast("この内容は読み込めませんでした。"); }
+  }
+}
+
+/* ---------- xp ---------- */
+const levelOf = xp => 1 + Math.floor(Math.sqrt(Math.max(0, xp) / 40));
+const xpFor = lv => 40 * (lv - 1) * (lv - 1);
+function gain(n, msg) {
+  const before = levelOf(S.xp);
+  S.xp = Math.max(0, S.xp + n);
+  const after = levelOf(S.xp);
+  if (after > before) toast('<img src="img/levelup.webp" alt="">レベルが あがった！<br><b>Lv ' + after + "</b> になった。");
+  else if (n > 0) toast(esc(msg || "") + " <b>+" + n + " XP</b>");
+}
+const lose = n => { S.xp = Math.max(0, S.xp - n); };
+let toastTimer = null;
+function toast(html) {
+  const el = document.getElementById("toast");
+  el.innerHTML = '<div class="win">' + html + "</div>";
+  el.hidden = false; clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+}
+
+/* ---------- helpers ---------- */
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nl = s => esc(s).replace(/\n/g, "<br>");
+const uid = () => Math.random().toString(36).slice(2, 9);
+const day = d => S.days[d] || null;
+const ensureDay = d => (S.days[d] = S.days[d] || {e: 0, signs: [], buffs: {}, escape: [], one: ""});
+const buffN = r => r && r.buffs ? Object.keys(r.buffs).length : 0;
+const week = k => (S.weeks[k] = S.weeks[k] || {one: "", oneDone: false, q1: "", q2: "", q3: "", done: false});
+function pips(now, goal) {
+  let h = '<span class="pips" aria-label="今 ' + (now == null ? "未判定" : "Lv" + now) + "、目標 Lv" + goal + '">';
+  for (let i = 1; i <= 5; i++) h += '<span class="pip' + (now != null && i <= now ? " on" : "") + (i === goal ? " goal" : "") + '"></span>';
+  return h + "</span>";
+}
+function skillOptions(sel) {
+  return SKILLS.map(d => '<optgroup label="' + esc(d.name) + '">' + d.skills.map(s => '<option value="' + s.id + '"' + (s.id === sel ? " selected" : "") + ">" + s.id + " " + esc(s.name) + "</option>").join("") + "</optgroup>").join("");
+}
+function trust() {
+  const k = S.promises.filter(p => p.status === "kept").length, d = S.promises.filter(p => p.status === "dropped").length;
+  return k + d === 0 ? null : Math.round(k / (k + d) * 100);
+}
+function weekBuffs(k) {
+  let n = 0; for (let i = 0; i < 7; i++) n += buffN(day(addDays(k, i))); return n;
+}
+
+/* ---------- early warning ---------- */
+function alarm() {
+  const t = today(), reasons = [];
+  const last3 = [0, 1, 2].map(i => day(addDays(t, -i)));
+  if (last3.filter(r => r && r.e === 1).length >= 2) reasons.push("調子の低い日が続いている");
+  const known = Object.keys(S.days).filter(d => d < t);
+  if (known.length >= 2 && !buffN(day(addDays(t, -1))) && !buffN(day(addDays(t, -2))) && !buffN(day(t))) reasons.push("バフが2日以上ゼロ");
+  const signs = last3.reduce((n, r) => n + (r && r.signs ? r.signs.length : 0), 0);
+  if (signs >= 3) reasons.push("予兆が" + signs + "つ重なっている");
+  const past = Object.keys(S.days).filter(d => d < t && S.days[d].e).sort();
+  const lastD = past[past.length - 1];
+  if (lastD && daysBetween(lastD, t) >= 3 && !(day(t) && day(t).e)) reasons.push(daysBetween(lastD, t) + "日ぶりのチェックイン");
+  return reasons;
+}
+
+/* ---------- daily card (changes each day; "もう1枚" draws again) ---------- */
+function cardPool() {
+  const p = [];
+  S.affirm.forEach(a => p.push({src: "アファメーション", t: a}));
+  (S.facts || []).forEach(f => p.push({src: "事実", t: f}));
+  if (S.north.being) p.push({src: "北極星・あり方", t: S.north.being});
+  if (S.north.mission) p.push({src: "北極星・使命", t: S.north.mission});
+  S.promises.filter(x => x.status === "kept").forEach(x => p.push({src: "果たした約束", t: x.title + "（" + md(x.doneAt) + "）"}));
+  Object.keys(S.weeks).forEach(k => { const w = S.weeks[k]; if (w.q2) p.push({src: md(k) + "の週、エネルギーが上がったこと", t: w.q2}); });
+  S.escapes.forEach(e => p.push({src: "抜け出した波", t: md(e.date) + "、悪い波から自分で抜け出した"}));
+  return p;
+}
+function todayCard() {
+  const p = cardPool(), t = today();
+  let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  if (!p.length) return {src: "はじめに", t: "「ほし」でアファメーションや自分の事実を足すと、ここに日替わりで出てきます"};
+  return p[(h + cardShift * 7) % p.length];
+}
+
+/* ---------- views ---------- */
+function playerCard() {
+  const lv = levelOf(S.xp), lo = xpFor(lv), hi = xpFor(lv + 1);
+  const st = stages()[S.stage - 1], tr = trust(), wb = weekBuffs(weekKey(today()));
+  const pct = Math.round((S.xp - lo) / (hi - lo) * 100);
+  return '<section class="win"><img class="banner tall" src="img/stage' + st.no + '.webp" alt="" width="600" height="656" style="object-position:center 22%"><div class="row between"><div class="stack" style="gap:2px"><span class="badge">第' + st.no + "段 ・ " + esc(st.title) + '</span><h1 style="font-size:22px">オーナーへの冒険</h1></div><div class="lv num">Lv ' + lv + "</div></div>" +
+    '<div class="row" style="margin-top:10px"><span class="dot small mute">XP</span><div class="bar"><i style="width:' + pct + '%"></i></div><span class="num small">' + S.xp + " / " + hi + "</span></div>" +
+    '<div class="stats"><div class="stat"><b>' + (tr == null ? "−" : tr + "%") + '</b><span>自己信頼度</span></div><div class="stat"><b>' + wb + '</b><span>今週のバフ</span></div><div class="stat"><b>' + S.promises.filter(p => p.status === "kept").length + '</b><span>果たした約束</span></div></div></section>';
+}
+function alarmCard(r) {
+  const reasons = alarm();
+  const done = (r && r.escape) || [];
+  if (!reasons.length) return "";
+  const cleared = done.length >= 3;
+  const lvl = reasons.length >= 2 ? "alarm" : "warn";
+  if (cleared) return '<section class="win calm"><img class="banner" src="img/escape.webp" alt="" width="960" height="640"><p class="wt" style="color:var(--leaf)">波から ぬけだした</p><p>今日は脱出クエストを' + done.length + "つやった。それで十分。今日は深追いしない。</p></section>";
+  return '<section class="win ' + lvl + '"><img class="banner" src="img/alarm.webp" alt="" width="960" height="640"><p class="wt" style="color:var(--' + (lvl === "alarm" ? "rose" : "amber") + ')">' + (lvl === "alarm" ? "けいほう：深くもぐる前に、いま手を打とう" : "ちゅうい：波が下がりはじめている") + '</p>' +
+    '<p class="small mute">' + reasons.map(esc).join(" ／ ") + "</p>" +
+    '<p class="dot" style="margin:10px 0 4px">脱出クエスト（3つで成功・+50 XP）</p><div class="stack" style="gap:2px">' +
+    ESCAPE.map(e => '<button class="esc' + (done.includes(e.id) ? " on" : "") + '" data-act="escape" data-id="' + e.id + '" aria-pressed="' + done.includes(e.id) + '"><span class="box">' + (done.includes(e.id) ? "■" : "□") + '</span><span class="lbl small">' + esc(e.t) + "</span></button>").join("") + "</div>" +
+    (done.includes("one") ? "" : '<label for="oneThing" style="margin-top:6px">名前のつく一個（書けたらタスク）<input id="oneThing" placeholder="例：A社への提案書の構成を決める" value="' + esc(r ? r.one : "") + '"></label>') +
+    "</section>";
+}
+function todayView() {
+  const t = today(), r = day(t), e = r ? r.e : 0, signs = r ? r.signs : [];
+  const c = todayCard();
+  const wk = weekKey(t), w = S.weeks[wk];
+  let h = playerCard() + alarmCard(r);
+  // check-in
+  h += '<section class="win">' + (e ? "" : '<img class="banner" src="img/market.webp" alt="" width="960" height="720">') + '<p class="wt">けさの ちょうし ・ ' + md(t) + "（" + WD[dow(t)] + '）</p>' +
+    '<div class="seg"><button class="e3' + (e === 3 ? " on" : "") + '" data-act="energy" data-v="3">高い</button><button class="e2' + (e === 2 ? " on" : "") + '" data-act="energy" data-v="2">ふつう</button><button class="e1' + (e === 1 ? " on" : "") + '" data-act="energy" data-v="1">低い</button></div>' +
+    (e ? '<div class="hero-row"><img src="img/' + ["", "hero_rest", "hero_mid", "hero_high"][e] + '.webp" alt=""><p><span class="dot" style="color:var(--' + (e === 3 ? "leaf" : e === 2 ? "sky" : "rose") + ')">' + MODE[e].name + "</span><br>" + esc(MODE[e].t) + "</p></div>" : '<p class="small mute" style="margin-top:8px">ひとつ選ぶだけ。低い日も、選べば +10 XP。</p>') +
+    '<p class="small mute" style="margin:12px 0 6px">気になる予兆があれば（なければそのままでいい）</p><div class="chips">' +
+    SIGNS.map(s => '<button class="chip' + (signs.includes(s) ? " on" : "") + '" data-act="sign" data-v="' + esc(s) + '" aria-pressed="' + signs.includes(s) + '">' + esc(s) + "</button>").join("") + "</div></section>";
+  // daily card
+  const kind = /果たした約束|抜け出した波/.test(c.src) ? "rare" : c.src === "事実" ? "fact" : "plain";
+  h += '<section class="win"><p class="wt">きょうの いちまい</p><div class="tcard ' + kind + '" style="background-image:url(img/card_' + kind + '.webp)"><span class="src dot small" style="color:var(--gold)">' + esc(c.src) + "</span><p>" + esc(c.t) + '</p></div><div class="row" style="margin-top:10px;justify-content:center"><button class="ghost" data-act="draw">もう1枚ひく</button></div></section>';
+  // buffs
+  const wkDays = [0, 1, 2, 3, 4, 5, 6].map(i => addDays(wk, i));
+  h += '<section class="win"><p class="wt">きょうの バフ ・ やると調子が上がるスイッチ</p><p class="small mute" style="margin-bottom:6px">しっかりやれたら「全部」、少しでも「最小版」。やらない日があっても減点はない。</p>' +
+    S.buffs.map(b => {
+      const st = r && r.buffs ? r.buffs[b.id] : null;
+      const ICONS = {journal: 1, move: 1, affirm: 1, meditate: 1, posture: 1, star: 1};
+      return '<div class="buff">' + (ICONS[b.id] ? '<img class="ic' + (st ? "" : " off") + '" src="img/icon_' + b.id + '.webp" alt="" width="40" height="40">' : '<span class="ic"></span>') + '<div class="nm"><b>' + esc(b.name) + "</b><small>全部：" + esc(b.full) + "／最小：" + esc(b.mini) + (b.id === "star" ? ' <button class="link" data-act="go" data-tab="star">ほしを開く</button>' : "") + '</small><div class="week7" aria-label="今週">' + wkDays.map(d => { const x = day(d) && day(d).buffs ? day(d).buffs[b.id] : null; return '<i class="' + (x === "full" ? "f" : x === "mini" ? "m" : "") + '"></i>'; }).join("") + '</div></div><button class="mini' + (st === "mini" ? " on" : "") + '" data-act="buff" data-id="' + b.id + '" data-k="mini">最小</button><button class="full' + (st === "full" ? " on" : "") + '" data-act="buff" data-id="' + b.id + '" data-k="full">全部</button></div>';
+    }).join("") + '<div class="row" style="margin-top:10px"><button class="ghost" data-act="editBuffs">バフを編集</button></div></section>';
+  // week one thing
+  h += '<section class="win"><p class="wt">こんしゅうの ひとつだけ ・ ' + md(wk) + " の週</p>" +
+    (w && w.one ? '<div class="row"><p class="grow' + (w.oneDone ? " mute" : "") + '" style="font-weight:700">' + esc(w.one) + "</p>" + (w.oneDone ? '<span class="tag leaf">達成</span>' : '<button class="gold" data-act="oneDone">やった！ +40</button>') + "</div>" :
+      '<p class="small mute" style="margin-bottom:6px">今週これさえやればOK、を一つだけ。ほかはボーナス。</p><div class="row" style="flex-wrap:nowrap"><input id="oneInput" placeholder="例：商談2件をAIで準備する"><button data-act="setOne">決める</button></div>') +
+    ([5, 6, 0].includes(dow(t)) && !(w && w.done) ? '<button class="ghost" style="margin-top:10px" data-act="go" data-tab="log">今週の3つの問いに答える →</button>' : "") + "</section>";
+  // season
+  h += seasonCard();
+  if (LOCAL && Object.keys(S.days).length >= 7 && (!S.lastBackup || daysBetween(S.lastBackup, t) >= 30)) h += '<section class="win warn"><p class="small">' + (S.lastBackup ? "最後のバックアップから" + daysBetween(S.lastBackup, t) + "日たちました。" : "まだバックアップがありません。") + ' 記録はこのスマホの中だけにあります。</p><button style="margin-top:8px" data-act="go" data-tab="star">「ほし」でバックアップする</button></section>';
+  return h;
+}
+function seasonCard() {
+  const s = S.season, m = ALL[s.main], lvNow = S.skills[s.main];
+  const left = daysBetween(today(), s.end), notYet = daysBetween(today(), s.start);
+  const when = notYet > 0 ? "開始まで あと " + notYet + " 日" : left >= 0 ? "のこり " + left + " 日" : "期間終了。シーズンを終えよう";
+  const max = Math.max(s.stretch, s.progress, 1);
+  const pct = Math.min(100, Math.round(s.progress / max * 100)), bpos = Math.round(s.base / max * 100);
+  let claim = "";
+  if (s.progress >= s.base && !s.gotBase) claim += '<button class="gold" data-act="claimBase">ベースライン到達！ +200 XP</button>';
+  if (s.progress >= s.stretch && !s.gotStretch) claim += '<button class="gold" data-act="claimStretch">ストレッチ到達！ +400 XP</button>';
+  const recent = (s.log || []).slice(-3).reverse().map(l => '<li><span class="k num">' + md(l.date) + "</span>" + esc(l.note || "クエストを1つ進めた") + "</li>").join("");
+  return '<section class="win"><img class="banner" src="img/goal.webp" alt="" width="960" height="640" loading="lazy"><p class="wt">シーズン ' + s.no + " ・ " + md(s.start) + "〜" + md(s.end) + " ・ " + when + '</p><div class="stack">' +
+    '<button class="sk main" data-act="skill" data-id="' + s.main + '"><span class="id">' + s.main + '</span><span class="nm">主役：' + esc(m ? m.name : s.main) + ' <span class="mute small">Lv ' + (lvNow == null ? "?" : lvNow) + " → 目標 " + (m ? m.goal : "") + "</span></span>" + pips(lvNow, m ? m.goal : 0) + "</button>" +
+    "<div><p class=\"dot small mute\">メインクエスト</p><p style=\"font-weight:700;font-size:16px\">" + esc(s.quest) + "</p></div>" +
+    (s.question ? '<p class="small"><span class="dot mute">追いかける問い</span> ' + esc(s.question) + "</p>" : "") +
+    '<div class="row"><button class="ghost big" data-act="qminus" aria-label="1つ戻す">−</button><div class="bar leaf"><i style="width:' + pct + '%"></i><span class="mark" style="left:' + bpos + '%"></span></div><span class="num" style="font-size:18px">' + s.progress + '</span><button class="gold big" data-act="qplus" aria-label="1つ進める">＋</button></div>' +
+    '<p class="small mute">ベースライン ' + s.base + "（ここまで来ればクリア）／ストレッチ " + s.stretch + "（届いたら最高）" + (s.gotBase ? '　<span class="tag leaf">クリア</span>' : "") + (s.gotStretch ? ' <span class="tag">ストレッチ</span>' : "") + "</p>" +
+    '<label for="qnote">進めた内容（任意・＋で記録）<input id="qnote" placeholder="例：A社の商談、AIで質問リストを準備"></label>' + claim +
+    '<p class="small"><span class="dot mute">そうび</span> ' + esc(s.tool) + '<br><span class="dot mute">おきて</span> ' + esc(s.rule) + "</p>" +
+    (recent ? '<ul class="list">' + recent + "</ul>" : "") +
+    '<div class="row"><button data-act="editQuest">クエストを編集</button><button data-act="endSeason">シーズンを終える</button></div></div></section>';
+}
+function promiseView() {
+  const open = S.promises.filter(p => p.status === "open").sort((a, b) => a.due < b.due ? -1 : 1);
+  const kept = S.promises.filter(p => p.status === "kept").slice().reverse();
+  const tr = trust(), t = today();
+  let h = '<section class="win"><img class="banner" src="img/board.webp" alt="" width="960" height="640"><p class="wt">じぶんとの やくそく</p><div class="row between"><p class="small" style="max-width:34em">やりたいこと・行きたいところ・なりたい状態を、期限とポイントを決めて自分と約束する。果たすと、そのポイントが入る。</p><div class="stat" style="min-width:96px"><b>' + (tr == null ? "−" : tr + "%") + '</b><span>自己信頼度</span></div></div>' +
+    '<div class="stack" style="margin-top:12px"><label for="pTitle">約束<input id="pTitle" placeholder="例：家族と温泉に行く／研修の商談を1件自分で取る"></label>' +
+    '<div class="row form3"><label for="pKind">種類<select id="pKind"><option>やりたい</option><option>行きたい</option><option>なりたい</option><option>仕事</option></select></label><label for="pDue">期限<input id="pDue" type="date" value="' + addDays(t, 30) + '"></label><label for="pPts">ポイント<input id="pPts" type="number" min="10" step="10" value="100"></label></div>' +
+    '<button class="gold" data-act="addPromise">約束する</button></div></section>';
+  h += '<section class="win"><p class="wt">すすめている やくそく</p><div class="stack">' + (open.map(p => {
+    const left = daysBetween(t, p.due);
+    const late = left < 0;
+    return '<div class="promise"><div class="row between"><span class="tag' + (late ? " rose" : "") + '">' + esc(p.kind) + "</span><span class=\"num small" + (late ? "" : " mute") + '"' + (late ? ' style="color:var(--rose)"' : "") + ">" + md(p.due) + (late ? " ・ 期限切れ" : left === 0 ? " ・ 今日まで" : " ・ あと" + left + "日") + '</span></div><p class="ttl" style="margin:4px 0 8px">' + esc(p.title) + ' <span class="num" style="color:var(--gold);font-weight:400">' + p.pts + "pt</span></p>" +
+      '<div class="row"><button class="gold" data-act="keep" data-id="' + p.id + '">果たした！</button>' + (p.reneg < 1 ? '<button data-act="reneg" data-id="' + p.id + '">仕切り直す（1回まで）</button>' : '<span class="small mute">仕切り直し済み</span>') + '<button class="ghost" data-act="dropP" data-id="' + p.id + '">手放す</button></div></div>';
+  }).join("") || '<p class="small mute">まだありません。小さい約束からでいい。</p>') + "</div>" +
+    '<p class="small mute" style="margin-top:10px">期限に間に合わないときは、黙って破らずに「仕切り直す」。自分と交渉し直すのも約束のうち。</p></section>';
+  if (kept.length) h += '<section class="win"><p class="wt">果たした やくそく</p><ul class="list">' + kept.map(p => '<li><span class="k num">' + md(p.doneAt) + "</span><span>" + esc(p.title) + ' <span class="mute">+' + p.pts + "</span></span></li>").join("") + "</ul></section>";
+  return h;
+}
+function skillView() {
+  const main = S.season.main;
+  let h = '<section class="win"><p class="wt">スキルツリー</p><p class="small">緑が今のレベル、金の枠が10年後の目標。タップすると判定基準とレベルの記録。<span class="qm">?</span> は未判定なので、余裕のある日に自己評価で埋めよう。</p></section>';
+  SKILLS.forEach(d => {
+    h += '<section class="win"><div class="dom-head"><h2>' + esc(d.name) + '</h2><span class="small mute">' + esc(d.layer) + '</span></div><div class="stack" style="gap:0">';
+    d.skills.forEach(s => {
+      const now = S.skills[s.id];
+      h += '<button class="sk' + (s.id === main ? " main" : "") + '" data-act="skill" data-id="' + s.id + '"><span class="id">' + s.id + '</span><span class="nm">' + esc(s.name) + (s.id === main ? ' <span class="tag">主役</span>' : "") + "</span>" + (now == null ? '<span class="qm">? 未判定</span>' : pips(now, s.goal)) + "</button>";
+    });
+    h += "</div></section>";
+  });
+  return h;
+}
+function logView() {
+  const t = today(), wk = weekKey(t), w = S.weeks[wk] || {};
+  // 28-day grid starting on a Monday
+  const start = addDays(wk, -21);
+  let grid = "";
+  for (let i = 0; i < 28; i++) { const d = addDays(start, i), r = day(d); grid += '<div class="' + (r && r.e ? "e" + r.e : "") + (d === t ? " t" : "") + '" title="' + md(d) + '">' + (buffN(r) || "") + "</div>"; }
+  let h = '<section class="win"><p class="wt">ちょうしの なみ ・ 4週間</p><div class="grid28" aria-label="4週間の調子">' + grid + '</div><p class="small mute" style="margin-top:8px">緑＝高い、青＝ふつう、赤＝低い。数字はその日のバフの数。波があるのは前提。赤が続く前に気づければいい。</p></section>';
+  h += '<section class="win"><p class="wt">こんしゅうの 3つの問い ・ ' + md(wk) + ' の週</p><div class="stack">' +
+    '<label for="q1">北極星に近づいたことは？<textarea id="q1" rows="2">' + esc(w.q1) + "</textarea></label>" +
+    '<label for="q2">エネルギーが上がったことは？<textarea id="q2" rows="2">' + esc(w.q2) + "</textarea></label>" +
+    '<label for="q3">来週の「一つだけ」は？<textarea id="q3" rows="2">' + esc(w.q3) + "</textarea></label>" +
+    '<button class="gold" data-act="saveWeek">' + (w.done ? "書き直す" : "記録する（+30 XP）") + "</button></div></section>";
+  h += '<section class="win"><p class="wt">つぎのシーズン候補</p><p class="small mute" style="margin-bottom:8px">シーズン中に気になったテーマは、乗りかえずにここへ。</p><div class="row" style="flex-wrap:nowrap"><input id="idea" placeholder="例：AIで論点台帳を閉じる"><button data-act="addIdea">追加</button></div><ul class="list" style="margin-top:8px">' +
+    (S.ideas.map((it, i) => '<li><span class="k">・</span><span class="grow">' + esc(it) + '</span><button class="ghost" data-act="delIdea" data-i="' + i + '">消す</button></li>').join("") || '<li class="mute">まだありません</li>') + "</ul></section>";
+  const ws = Object.keys(S.weeks).filter(k => S.weeks[k].done).sort().reverse();
+  h += '<section class="win"><p class="wt">ふりかえりの きろく</p><div class="stack">' + (ws.map(k => { const x = S.weeks[k]; return '<div class="entry"><p class="num small">' + md(k) + " の週" + (x.one ? ' ・ 一つだけ：' + esc(x.one) + (x.oneDone ? " ✓" : "") : "") + '</p><p class="small"><span class="mute">近づいた：</span>' + nl(x.q1) + '<br><span class="mute">上がった：</span>' + nl(x.q2) + '<br><span class="mute">来週：</span>' + nl(x.q3) + "</p></div>"; }).join("") || '<p class="small mute">金曜の夜に3つの問いに答えると、ここにたまっていきます。</p>') + "</div></section>";
+  if (S.history.length) h += '<section class="win"><p class="wt">これまでの シーズン</p><ul class="list">' + S.history.slice().reverse().map(x => '<li><span class="k">S' + x.no + '</span><span>' + esc(x.main) + " ・ " + esc(x.quest) + '<br><span class="mute">' + x.progress + "（ベース" + (x.base || "") + "／ストレッチ" + (x.stretch || x.target || "") + "）" + (x.comment ? " ・ " + esc(x.comment) : "") + "</span></span></li>").join("") + "</ul></section>";
+  return h;
+}
+function compareCard() {
+  const t = today();
+  const win = (endOff) => {
+    const ds = []; for (let i = 0; i < 28; i++) ds.push(addDays(t, -endOff - i));
+    const rec = ds.map(day).filter(Boolean);
+    const es = rec.filter(r => r.e).map(r => r.e);
+    const kept = S.promises.filter(p => p.status === "kept" && p.doneAt && daysBetween(p.doneAt, t) >= endOff && daysBetween(p.doneAt, t) < endOff + 28).length;
+    return {n: rec.length, buff: (rec.reduce((a, r) => a + buffN(r), 0) / 4).toFixed(1), e: es.length ? (es.reduce((a, b) => a + b, 0) / es.length).toFixed(1) : "−", kept};
+  };
+  const now = win(0), then = win(90);
+  if (then.n < 5) return '<section class="win"><p class="wt">3か月前の じぶんと くらべる</p><p class="small mute">比べる相手は他人ではなく、3か月前の自分。記録が3か月たまると、ここに並びます。</p></section>';
+  return '<section class="win"><p class="wt">3か月前の じぶんと くらべる</p><table class="cmp"><thead><tr><th></th><th>3か月前</th><th>いま</th></tr></thead><tbody><tr><td>週あたりのバフ</td><td class="num">' + then.buff + '</td><td class="num">' + now.buff + '</td></tr><tr><td>調子の平均（3が最高）</td><td class="num">' + then.e + '</td><td class="num">' + now.e + '</td></tr><tr><td>果たした約束（4週間）</td><td class="num">' + then.kept + '</td><td class="num">' + now.kept + "</td></tr></tbody></table></section>";
+}
+function starView() {
+  const N = S.north;
+  const f = (id, key, label, rows) => '<label for="' + id + '">' + label + '<textarea id="' + id + '" data-north="' + key + '" rows="' + rows + '">' + esc(N[key]) + "</textarea></label>";
+  let h = '<section class="win"><img class="banner tall" src="img/north.webp" alt="" width="960" height="640"><p class="wt">ほくきょくせい ・ 変えない</p><div class="stack">' + f("nMission", "mission", "使命（何のためにやるか）", 2) + f("nBeing", "being", "あり方（どういう人間でいるか）", 1) + f("nEarn", "earn", "稼ぎ方", 2) + f("nWork", "work", "働き方", 2) + f("nLegacy", "legacy", "残し方", 2) + f("nVision", "vision10", "10年後の姿", 3) +
+    '<label for="nAsset">目標資産額<input id="nAsset" data-field="asset" placeholder="まだ決めていなければ空欄でOK" value="' + esc(S.asset) + '"></label></div></section>';
+  h += '<section class="win"><p class="wt">アファメーション</p><p class="small mute" style="margin-bottom:8px">「きょうのいちまい」に日替わりで出てきます。画像より言葉。</p><ul class="list">' + S.affirm.map((a, i) => '<li><span class="k">・</span><span class="grow">' + esc(a) + '</span><button class="ghost" data-act="delAffirm" data-i="' + i + '">消す</button></li>').join("") + '</ul><div class="row" style="flex-wrap:nowrap;margin-top:8px"><input id="affirm" placeholder="自分の言葉で一文"><button data-act="addAffirm">追加</button></div></section>';
+  h += '<section class="win"><p class="wt">じぶんの じじつ</p><p class="small mute" style="margin-bottom:8px">感情ではなく事実で。宝箱と「きょうのいちまい」に出てきます。</p><ul class="list">' + (S.facts || []).map((a, i) => '<li><span class="k">★</span><span class="grow">' + esc(a) + '</span><button class="ghost" data-act="delFact" data-i="' + i + '">消す</button></li>').join("") + '</ul><div class="row" style="flex-wrap:nowrap;margin-top:8px"><input id="fact" placeholder="例：入社1年で新規事業のリーダーになった"><button data-act="addFact">追加</button></div></section>';
+  // treasure chest
+  const kept = S.promises.filter(p => p.status === "kept");
+  const clears = S.history.filter(x => x.gotBase || x.cleared);
+  const ups = S.slog.filter(l => l.to != null && (l.from == null || l.to > l.from));
+  h += '<section class="win" id="chest"><img class="banner" src="img/chest.webp" alt="" width="960" height="640" loading="lazy"><p class="wt">たからばこ ・ 落ちたときに開く場所</p><p class="small" style="margin-bottom:10px">感情ではなく事実。「まだ足りない」ではなく「もう材料は揃い始めている」。</p>' +
+    '<p class="dot small mute">これまでの事実</p><ul class="list" style="margin:6px 0 12px">' + ((S.facts || []).length ? "" : '<li class="mute">「ほし」の事実の欄に、自分がやってきたことを書いていこう</li>') + (S.facts || []).map(x => '<li><span class="k">★</span><span>' + esc(x) + "</span></li>").join("") + "</ul>" +
+    (kept.length ? '<p class="dot small mute">果たした約束</p><ul class="list" style="margin:6px 0 12px">' + kept.slice().reverse().map(p => '<li><span class="k num">' + md(p.doneAt) + "</span><span>" + esc(p.title) + "</span></li>").join("") + "</ul>" : "") +
+    (S.escapes.length ? '<p class="dot small mute">自分で抜け出した波</p><ul class="list" style="margin:6px 0 12px">' + S.escapes.slice().reverse().map(e => '<li><span class="k num">' + md(e.date) + "</span><span>悪い波から抜け出した" + (e.one ? "（" + esc(e.one) + "）" : "") + "</span></li>").join("") + "</ul>" : "") +
+    (clears.length ? '<p class="dot small mute">クリアしたシーズン</p><ul class="list" style="margin:6px 0 12px">' + clears.map(x => '<li><span class="k">S' + x.no + "</span><span>" + esc(x.quest) + "</span></li>").join("") + "</ul>" : "") +
+    (ups.length ? '<p class="dot small mute">上がったレベル</p><ul class="list" style="margin-top:6px">' + ups.slice().reverse().map(l => '<li><span class="k num">' + md(l.date) + "</span><span>" + l.id + " " + esc(ALL[l.id] ? ALL[l.id].name : "") + " → Lv" + l.to + "</span></li>").join("") + "</ul>" : "") + "</section>";
+  h += compareCard();
+  h += '<section class="win"><p class="wt">オーナーへの かいだん</p><ol class="stairs">' + stages().map(st => '<li class="' + (st.no === S.stage ? "now" : st.no < S.stage ? "done" : "") + '"><span class="no">' + st.no + '</span><img class="th" src="img/stage' + st.no + '.webp" alt="" loading="lazy" style="object-position:center 20%"><div style="min-width:0"><div class="dot">' + esc(st.theme) + ' <span class="small mute">' + st.span + '</span></div><div class="small mute">称号：' + esc(st.title) + "<br>卒業条件：" + esc(st.goal) + "</div>" + (st.no === S.stage ? "" : '<button class="ghost" style="margin-top:6px" data-act="stage" data-no="' + st.no + '">ここを現在地にする</button>') + "</div></li>").join("") + "</ol></section>";
+  const lb = S.lastBackup ? md(S.lastBackup) + "（" + daysBetween(S.lastBackup, today()) + "日前）" : "まだ";
+  h += '<section class="win" id="data"><p class="wt">データと ひきつぎ</p><p class="small" style="margin-bottom:10px">' + (LOCAL ? "記録はこのスマホの中に保存されています。機種変更や、ブラウザのデータ削除で消えるので、月に一度バックアップを。" : "ログイン中：" + esc(currentUser.email || "")) + '<br><span class="mute">最後のバックアップ：' + lb + '</span></p><div class="stack">' +
+    '<button class="gold" data-act="export">バックアップをファイルで保存</button>' +
+    '<button data-act="copyBackup">バックアップをコピー（メモやLINEに貼って保存）</button>' +
+    '<label class="btnlike" for="importFile">ファイルから読み込む（自分用データ／バックアップ）<input id="importFile" type="file" accept="application/json,.json,text/plain" style="margin-top:6px"></label>' +
+    '<label for="pasteData">貼り付けて読み込む<textarea id="pasteData" rows="3" placeholder="コピーしておいたバックアップの文字をここに貼る"></textarea></label><button data-act="pasteImport">貼り付けた内容を読み込む</button>' +
+    (LOCAL ? "" : '<button class="ghost" data-act="logout">ログアウト</button>') + "</div></section>";
+  return h;
+}
+function render() {
+  const app = document.getElementById("app");
+  const nav = document.querySelector("nav.menu");
+  if (!currentUser) { nav.hidden = true; app.innerHTML = loginView(); return; }
+  nav.hidden = false;
+  app.innerHTML = (tab === "today" ? todayView() : tab === "promise" ? promiseView() : tab === "skill" ? skillView() : tab === "log" ? logView() : starView()) + '<p class="note" id="sync">' + esc(syncText) + "</p>";
+  document.querySelectorAll("nav.menu button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html) { const s = document.getElementById("sheet"); s.innerHTML = '<div class="win" role="dialog" aria-modal="true">' + html + "</div>"; s.hidden = false; const f = s.querySelector("input,textarea,select,button"); if (f) f.focus(); }
+function closeSheet() { const s = document.getElementById("sheet"); s.hidden = true; s.innerHTML = ""; }
+const head = t => '<div class="row between"><p class="wt" style="margin:0">' + t + '</p><button class="ghost" data-act="close">とじる</button></div>';
+let draftLv = null;
+function lvStepper() { return '<button class="ghost big" data-act="lvDown" aria-label="レベルを下げる">−</button><span class="lv num" id="draftLv">' + (draftLv == null ? "?" : draftLv) + '</span><button class="big" data-act="lvUp" aria-label="レベルを上げる">＋</button>'; }
+function skillSheet(id) {
+  const s = ALL[id]; draftLv = S.skills[id];
+  const rows = [2, 3, 4, 5].map(l => '<tr class="' + (draftLv === l ? "here" : "") + '"><th>Lv' + l + "</th><td>" + esc(s.lv[l][0]) + '</td><td class="mute">' + esc(s.lv[l][1]) + "</td></tr>").join("");
+  openSheet('<div class="stack">' + head(esc(s.domain.name)) + "<h2>" + s.id + " " + esc(s.name) + '</h2><p class="small mute">Lv1は「言葉と型を知っていて説明できる」。定性と定量の両方を満たしたら、そのレベル。直近12ヶ月の実績で判定。</p>' +
+    '<div class="scroll"><table class="crit"><thead><tr><th></th><th>できる状態</th><th>結果の基準</th></tr></thead><tbody>' + rows + "</tbody></table></div>" +
+    '<div class="row"><span class="dot">いまのレベル</span>' + lvStepper() + '<span class="small mute">目標 Lv' + s.goal + "</span></div>" +
+    '<label for="lvNote">根拠（いつ・何で・どうなったか）<textarea id="lvNote" rows="2"></textarea></label>' +
+    '<button class="gold" data-act="saveLv" data-id="' + id + '">レベルを記録する</button></div>');
+}
+function questSheet() {
+  const s = S.season;
+  openSheet('<div class="stack">' + head("クエストを編集") +
+    '<label for="qMain">主役のサブスキル<select id="qMain">' + skillOptions(s.main) + "</select></label>" +
+    '<label for="qQuest">メインクエスト<textarea id="qQuest" rows="2">' + esc(s.quest) + "</textarea></label>" +
+    '<div class="row" style="flex-wrap:nowrap"><label for="qBase" style="flex:1">ベースライン<input id="qBase" type="number" min="1" value="' + s.base + '"></label><label for="qStretch" style="flex:1">ストレッチ<input id="qStretch" type="number" min="1" value="' + s.stretch + '"></label></div>' +
+    '<div class="row" style="flex-wrap:nowrap"><label for="qStart" style="flex:1">開始<input id="qStart" type="date" value="' + s.start + '"></label><label for="qEnd" style="flex:1">終了<input id="qEnd" type="date" value="' + s.end + '"></label></div>' +
+    '<label for="qQuestion">追いかける問い<input id="qQuestion" value="' + esc(s.question) + '"></label>' +
+    '<label for="qTool">そうび（使う道具）<input id="qTool" value="' + esc(s.tool) + '"></label>' +
+    '<label for="qRule">おきて（インプットのルール）<input id="qRule" value="' + esc(s.rule) + '"></label>' +
+    '<button class="gold" data-act="saveQuest">保存する</button></div>');
+}
+function endSheet() {
+  const s = S.season, m = ALL[s.main];
+  draftLv = S.skills[s.main];
+  const start = addDays(today(), 1);
+  openSheet('<div class="stack">' + head("シーズン " + s.no + " を終える") +
+    "<p>" + esc(s.quest) + '<br><span class="num">' + s.progress + "</span>（ベース " + s.base + "／ストレッチ " + s.stretch + "）" + (s.gotBase ? ' <span class="tag leaf">クリア</span>' : "") + "</p>" +
+    '<div class="row"><span class="dot">' + s.main + " " + esc(m.name) + "</span>" + lvStepper() + "</div>" +
+    '<label for="eNote">このシーズンでわかったこと・根拠<textarea id="eNote" rows="2"></textarea></label>' +
+    '<p class="wt" style="margin-top:8px">つぎのシーズン ' + (s.no + 1) + "</p>" +
+    (S.ideas.length ? '<p class="small mute">候補メモ：' + S.ideas.map(esc).join(" ／ ") + "</p>" : "") +
+    '<label for="nMain">主役のサブスキル<select id="nMain">' + skillOptions(s.main) + "</select></label>" +
+    '<label for="nQuest">メインクエスト<textarea id="nQuest" rows="2" placeholder="評価基準の「結果の基準」を使うと決めやすい"></textarea></label>' +
+    '<div class="row" style="flex-wrap:nowrap"><label for="nBase" style="flex:1">ベースライン<input id="nBase" type="number" min="1" value="3"></label><label for="nStretch" style="flex:1">ストレッチ<input id="nStretch" type="number" min="1" value="5"></label></div>' +
+    '<label for="nQuestion">追いかける問い<input id="nQuestion"></label>' +
+    '<div class="row" style="flex-wrap:nowrap"><label for="nStart" style="flex:1">開始<input id="nStart" type="date" value="' + start + '"></label><label for="nEnd" style="flex:1">終了（6週間）<input id="nEnd" type="date" value="' + addDays(start, 41) + '"></label></div>' +
+    '<button class="gold" data-act="nextSeason">次のシーズンへ（+100 XP）</button></div>');
+}
+function buffSheet() {
+  openSheet('<div class="stack">' + head("バフを編集") + '<p class="small mute">やると調子が上がるものだけ。最小版は「調子が最悪の日でもできる大きさ」にする。</p>' +
+    S.buffs.map((b, i) => '<div class="stack" style="gap:6px;border-top:1px solid var(--win-2);padding-top:8px"><div class="row" style="flex-wrap:nowrap"><input id="bn' + i + '" value="' + esc(b.name) + '" aria-label="名前"><button class="ghost" data-act="delBuff" data-i="' + i + '">消す</button></div><div class="row" style="flex-wrap:nowrap"><input id="bf' + i + '" value="' + esc(b.full) + '" aria-label="全部"><input id="bm' + i + '" value="' + esc(b.mini) + '" aria-label="最小版"></div></div>').join("") +
+    '<p class="dot small mute" style="margin-top:8px">新しいバフ</p><div class="row form3"><input id="bnNew" placeholder="名前"><input id="bfNew" placeholder="全部"><input id="bmNew" placeholder="最小版"></div>' +
+    '<button class="gold" data-act="saveBuffs">保存する</button></div>');
+}
+function renegSheet(id) {
+  const p = S.promises.find(x => x.id === id);
+  openSheet('<div class="stack">' + head("約束を仕切り直す") + '<p style="font-weight:700">' + esc(p.title) + '</p><p class="small mute">仕切り直しは1回まで。破るのではなく、自分と交渉し直す。</p>' +
+    '<label for="rDue">新しい期限<input id="rDue" type="date" value="' + addDays(today(), 14) + '"></label>' +
+    '<label for="rWhy">なぜずらすか（一言）<input id="rWhy" placeholder="例：家業の繁忙期と重なった"></label>' +
+    '<button class="gold" data-act="saveReneg" data-id="' + id + '">この期限で約束し直す</button></div>');
+}
+
+/* ---------- actions ---------- */
+const val = id => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+const arm = b => { if (b.dataset.armed) return true; b.dataset.armed = "1"; b.textContent = "本当に？"; b.classList.add("del-confirm"); return false; };
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-tab],[data-act]");
+  if (!b) { if (ev.target.id === "sheet") closeSheet(); return; }
+  if (b.dataset.tab && !b.dataset.act) { tab = b.dataset.tab; render(); window.scrollTo(0, 0); return; }
+  const a = b.dataset.act, s = S.season, t = today();
+  switch (a) {
+    case "go": tab = b.dataset.tab; render(); window.scrollTo(0, 0); break;
+    case "energy": {
+      const r = ensureDay(t), first = !r.e; r.e = Number(b.dataset.v);
+      if (first) gain(10, r.e === 1 ? "充電日として記録" : "チェックイン"); save(); render(); break;
+    }
+    case "sign": {
+      const r = ensureDay(t), v = b.dataset.v;
+      r.signs = r.signs.includes(v) ? r.signs.filter(x => x !== v) : r.signs.concat(v); save(); render(); break;
+    }
+    case "draw": cardShift++; render(); break;
+    case "buff": {
+      const r = ensureDay(t), id = b.dataset.id, k = b.dataset.k, cur = r.buffs[id], pts = {full: 15, mini: 8};
+      if (cur) lose(pts[cur]);
+      if (cur === k) delete r.buffs[id]; else { r.buffs[id] = k; gain(pts[k], (S.buffs.find(x => x.id === id) || {}).name + (k === "mini" ? "（最小版）" : "")); }
+      save(); render(); break;
+    }
+    case "escape": {
+      const r = ensureDay(t), id = b.dataset.id;
+      if (id === "one" && !r.escape.includes("one")) r.one = val("oneThing");
+      const before = r.escape.length;
+      r.escape = r.escape.includes(id) ? r.escape.filter(x => x !== id) : r.escape.concat(id);
+      if (before < 3 && r.escape.length >= 3 && !S.escapes.some(e => e.date === t)) { S.escapes.push({date: t, one: r.one || ""}); gain(50, "波から抜け出した"); }
+      save(); render(); break;
+    }
+    case "setOne": { const v = val("oneInput"); if (!v) break; week(weekKey(t)).one = v; gain(10, "今週の一つだけを決めた"); save(); render(); break; }
+    case "oneDone": { week(weekKey(t)).oneDone = true; gain(40, "今週の一つだけ、達成"); save(); render(); break; }
+    case "qplus": { s.progress += 1; s.log = s.log || []; s.log.push({date: t, note: val("qnote")}); gain(50, "クエストを進めた"); save(); render(); break; }
+    case "qminus": { if (s.progress <= 0) break; s.progress -= 1; (s.log || []).pop(); lose(50); save(); render(); break; }
+    case "claimBase": { s.gotBase = true; gain(200, "ベースライン到達！"); save(); render(); break; }
+    case "claimStretch": { s.gotStretch = true; gain(400, "ストレッチ到達！"); save(); render(); break; }
+    case "editQuest": questSheet(); break;
+    case "saveQuest": {
+      s.main = val("qMain") || s.main; s.quest = val("qQuest") || s.quest;
+      s.base = Math.max(1, parseInt(val("qBase"), 10) || s.base); s.stretch = Math.max(s.base, parseInt(val("qStretch"), 10) || s.stretch);
+      s.start = val("qStart") || s.start; s.end = val("qEnd") || s.end;
+      s.question = val("qQuestion"); s.tool = val("qTool"); s.rule = val("qRule");
+      save(); closeSheet(); render(); toast("クエストを更新した。"); break;
+    }
+    case "endSeason": endSheet(); break;
+    case "nextSeason": {
+      const q = val("nQuest");
+      if (!q) { const el = document.getElementById("nQuest"); el.focus(); el.placeholder = "次のクエストを1文で書いてください"; break; }
+      const from = S.skills[s.main];
+      if (draftLv !== from) { S.skills[s.main] = draftLv; S.slog.push({date: t, id: s.main, from, to: draftLv, note: val("eNote")}); }
+      S.history.push({no: s.no, main: s.main, quest: s.quest, progress: s.progress, base: s.base, stretch: s.stretch, gotBase: s.gotBase, gotStretch: s.gotStretch, comment: val("eNote"), start: s.start, end: s.end});
+      const nb = Math.max(1, parseInt(val("nBase"), 10) || 3);
+      S.season = {no: s.no + 1, main: val("nMain"), quest: q, base: nb, stretch: Math.max(nb, parseInt(val("nStretch"), 10) || 5), progress: 0, start: val("nStart"), end: val("nEnd"), question: val("nQuestion"), tool: s.tool, rule: s.rule, gotBase: false, gotStretch: false, log: []};
+      gain(100, "シーズン完了"); save(); closeSheet(); render(); break;
+    }
+    case "skill": skillSheet(b.dataset.id); break;
+    case "lvUp": case "lvDown": {
+      if (a === "lvUp") draftLv = draftLv == null ? 1 : Math.min(5, draftLv + 1);
+      else draftLv = draftLv == null ? null : draftLv <= 1 ? null : draftLv - 1;
+      document.getElementById("draftLv").textContent = draftLv == null ? "?" : draftLv;
+      document.querySelectorAll(".crit tbody tr").forEach((tr, i) => tr.classList.toggle("here", draftLv === i + 2));
+      break;
+    }
+    case "saveLv": {
+      const id = b.dataset.id, from = S.skills[id];
+      if (draftLv === from) { closeSheet(); break; }
+      S.skills[id] = draftLv; S.slog.push({date: t, id, from, to: draftLv, note: val("lvNote")});
+      if (draftLv != null && (from == null || draftLv > from)) gain(100, id + " を記録"); else toast(id + " のレベルを記録した。");
+      save(); closeSheet(); render(); break;
+    }
+    case "addPromise": {
+      const title = val("pTitle"), due = val("pDue");
+      if (!title || !due) { document.getElementById(title ? "pDue" : "pTitle").focus(); break; }
+      S.promises.push({id: uid(), title, kind: val("pKind") || "やりたい", due, pts: Math.max(10, parseInt(val("pPts"), 10) || 100), status: "open", reneg: 0, created: t});
+      save(); render(); toast("自分と約束した。"); break;
+    }
+    case "keep": { const p = S.promises.find(x => x.id === b.dataset.id); p.status = "kept"; p.doneAt = t; gain(p.pts, "約束を果たした"); save(); render(); break; }
+    case "reneg": renegSheet(b.dataset.id); break;
+    case "saveReneg": { const p = S.promises.find(x => x.id === b.dataset.id); p.due = val("rDue") || p.due; p.reneg = 1; p.why = val("rWhy"); save(); closeSheet(); render(); toast("約束を仕切り直した。"); break; }
+    case "dropP": { if (!arm(b)) break; const p = S.promises.find(x => x.id === b.dataset.id); p.status = "dropped"; p.doneAt = t; save(); render(); break; }
+    case "saveWeek": {
+      const w = week(weekKey(t)), first = !w.done;
+      w.q1 = val("q1"); w.q2 = val("q2"); w.q3 = val("q3");
+      if (!w.q1 && !w.q2 && !w.q3) { document.getElementById("q1").focus(); break; }
+      w.done = true;
+      if (w.q3) { const nx = week(addDays(weekKey(t), 7)); if (!nx.one) nx.one = w.q3; }
+      if (first) gain(30, "今週を振り返った"); else toast("書き直した。");
+      save(); render(); break;
+    }
+    case "addIdea": { const v = val("idea"); if (v) { S.ideas.push(v); save(); render(); } break; }
+    case "delIdea": { if (!arm(b)) break; S.ideas.splice(Number(b.dataset.i), 1); save(); render(); break; }
+    case "addAffirm": { const v = val("affirm"); if (v) { S.affirm.push(v); save(); render(); } break; }
+    case "delAffirm": { if (!arm(b)) break; S.affirm.splice(Number(b.dataset.i), 1); save(); render(); break; }
+    case "stage": { S.stage = Number(b.dataset.no); save(); render(); toast("現在地を 第" + S.stage + "段 にした。"); break; }
+    case "editBuffs": buffSheet(); break;
+    case "delBuff": { if (!arm(b)) break; S.buffs.splice(Number(b.dataset.i), 1); save(); buffSheet(); render(); break; }
+    case "saveBuffs": {
+      S.buffs.forEach((x, i) => { x.name = val("bn" + i) || x.name; x.full = val("bf" + i) || x.full; x.mini = val("bm" + i) || x.mini; });
+      const n = val("bnNew"); if (n) S.buffs.push({id: "b" + uid(), name: n, full: val("bfNew") || n, mini: val("bmNew") || "少しだけやる"});
+      save(); closeSheet(); render(); break;
+    }
+    case "close": closeSheet(); break;
+    case "login": login(); break;
+    case "logout": firebase.auth().signOut(); break;
+    case "export": exportData(); render(); break;
+    case "copyBackup": {
+      const txt = JSON.stringify(S);
+      const done = () => { markBackup(); render(); toast("バックアップをコピーした。メモアプリなどに貼って保存しよう。"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { const ta = document.getElementById("pasteData"); ta.value = txt; ta.select(); toast("文字を選択した。コピーして保存しよう。"); });
+      else { const ta = document.getElementById("pasteData"); ta.value = txt; ta.select(); }
+      break;
+    }
+    case "pasteImport": { const v = val("pasteData"); if (v) importText(v); break; }
+    case "addFact": { const v = val("fact"); if (v) { S.facts = (S.facts || []).concat(v); save(); render(); } break; }
+    case "delFact": { if (!arm(b)) break; S.facts.splice(Number(b.dataset.i), 1); save(); render(); break; }
+  }
+});
+document.addEventListener("change", ev => {
+  const el = ev.target;
+  if (el.id === "importFile" && el.files && el.files[0]) { importData(el.files[0]); el.value = ""; return; }
+  if (el.dataset.field) { S[el.dataset.field] = el.value; save(); }
+  if (el.dataset.north) { S.north[el.dataset.north] = el.value; save(); }
+});
+document.addEventListener("keydown", ev => { if (ev.key === "Escape" && !document.getElementById("sheet").hidden) closeSheet(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && document.getElementById("sheet").hidden && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") render(); });
+
+render();
+initCloud();
+</script>
+
+</body>
+</html>
